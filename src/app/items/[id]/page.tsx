@@ -327,7 +327,7 @@ export default function ItemPage() {
       {item.active && isCreator && (
         <Card className="bg-surface-secondary border-input mb-8">
           <CardHeader>
-            <CardTitle className="text-primary-content flex items-center gap-2">
+            <CardTitle className="text-primary-content flex items-center gap-2 mt-4">
               <Edit className="h-5 w-5 text-primary" />
               Manage Your Item
             </CardTitle>
@@ -349,15 +349,23 @@ export default function ItemPage() {
                 variant="outline"
                 className="flex-1"
                 onClick={async () => {
-                  const action = item.active ? "mark as unavailable" : "mark as available";
-                  if (confirm(`Are you sure you want to ${action}? This will ${item.active ? "hide" : "show"} it ${item.active ? "from" : "to"} other users.`)) {
+                  const action = item.active
+                    ? "mark as unavailable"
+                    : "mark as available";
+                  if (
+                    confirm(
+                      `Are you sure you want to ${action}? This will ${item.active ? "hide" : "show"} it ${item.active ? "from" : "to"} other users.`
+                    )
+                  ) {
                     try {
-                      const { updateItem } = await import("@/lib/listings-actions");
+                      const { updateItem } = await import(
+                        "@/lib/listings-actions"
+                      );
                       const result = await updateItem(item.id, {
                         title: item.title,
                         description: item.description,
                         imageUrl: item.imageUrl || "",
-                        tagIds: item.tags.map(tag => tag.id),
+                        tagIds: item.tags.map((tag) => tag.id),
                         repeatable: item.repeatable,
                         active: !item.active,
                       });
@@ -365,7 +373,10 @@ export default function ItemPage() {
                       if (result.success) {
                         window.location.reload();
                       } else {
-                        alert("Failed to update item status: " + (result.error || "Unknown error"));
+                        alert(
+                          "Failed to update item status: " +
+                            (result.error || "Unknown error")
+                        );
                       }
                     } catch (error) {
                       console.error("Error updating item status:", error);
@@ -486,7 +497,8 @@ export default function ItemPage() {
         <Card className="bg-orange-50 dark:bg-orange-900/30 border-orange-200 dark:border-orange-800">
           <CardContent className="p-6 text-center">
             <p className="text-orange-800 dark:text-orange-200">
-              Your item is currently marked as unavailable. You can reactivate it by editing the item.
+              Your item is currently marked as unavailable. You can reactivate
+              it by editing the item.
             </p>
             <Button
               className="mt-4"
