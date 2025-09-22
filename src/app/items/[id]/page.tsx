@@ -10,6 +10,7 @@ import {
   User,
   Tag,
   Calendar,
+  Edit,
 } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -67,6 +68,9 @@ export default function ItemPage() {
 
   // Get item ID from URL params
   const itemId = parseInt(params.id as string);
+
+  // Check if current user is the creator of this item
+  const isCreator = user?.id === item?.userId;
 
   useEffect(() => {
     // Check if we're redirected from create listing page
@@ -319,8 +323,78 @@ export default function ItemPage() {
         </div>
       </div>
 
-      {/* Make Offer Section */}
-      {item.active && (
+      {/* Edit Item Section - Only show for creators */}
+      {item.active && isCreator && (
+        <Card className="bg-surface-secondary border-input mb-8">
+          <CardHeader>
+            <CardTitle className="text-primary-content flex items-center gap-2">
+              <Edit className="h-5 w-5 text-primary" />
+              Manage Your Item
+            </CardTitle>
+            <CardDescription className="text-secondary-content">
+              You can edit your item details or mark it as unavailable.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Button
+                className="flex-1"
+                onClick={() => (window.location.href = `/edit-item/${item.id}`)}
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Item
+              </Button>
+
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={async () => {
+                  const action = item.active ? "mark as unavailable" : "mark as available";
+                  if (confirm(`Are you sure you want to ${action}? This will ${item.active ? "hide" : "show"} it ${item.active ? "from" : "to"} other users.`)) {
+                    try {
+                      const { updateItem } = await import("@/lib/listings-actions");
+                      const result = await updateItem(item.id, {
+                        title: item.title,
+                        description: item.description,
+                        imageUrl: item.imageUrl || "",
+                        tagIds: item.tags.map(tag => tag.id),
+                        repeatable: item.repeatable,
+                        active: !item.active,
+                      });
+
+                      if (result.success) {
+                        window.location.reload();
+                      } else {
+                        alert("Failed to update item status: " + (result.error || "Unknown error"));
+                      }
+                    } catch (error) {
+                      console.error("Error updating item status:", error);
+                      alert("Failed to update item status. Please try again.");
+                    }
+                  }
+                }}
+              >
+                {item.active ? "Mark as Unavailable" : "Mark as Available"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Creator's Item Notice */}
+      {isCreator && (
+        <Card className="bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800 mb-6">
+          <CardContent className="flex items-center p-4">
+            <User className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-2" />
+            <p className="text-blue-800 dark:text-blue-200">
+              This is your item. You can edit it using the controls above.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Make Offer Section - Only show for non-creators */}
+      {item.active && !isCreator && (
         <Card className="bg-surface-secondary border-input">
           <CardHeader>
             <CardTitle className="text-primary-content flex items-center gap-2">
@@ -396,12 +470,31 @@ export default function ItemPage() {
         </Card>
       )}
 
-      {!item.active && (
+      {/* Inactive Item Notice */}
+      {!item.active && !isCreator && (
         <Card className="bg-surface-secondary border-input">
           <CardContent className="p-6 text-center">
             <p className="text-muted-content">
               This item is no longer available for offers.
             </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Inactive Item Notice for Creator */}
+      {!item.active && isCreator && (
+        <Card className="bg-orange-50 dark:bg-orange-900/30 border-orange-200 dark:border-orange-800">
+          <CardContent className="p-6 text-center">
+            <p className="text-orange-800 dark:text-orange-200">
+              Your item is currently marked as unavailable. You can reactivate it by editing the item.
+            </p>
+            <Button
+              className="mt-4"
+              onClick={() => (window.location.href = `/edit-item/${item.id}`)}
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Edit Item
+            </Button>
           </CardContent>
         </Card>
       )}

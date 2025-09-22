@@ -58,7 +58,7 @@ export default function EditItemPage() {
           setImageUrl(item.imageUrl || "");
           setRepeatable(item.repeatable);
           setActive(item.active);
-          setSelectedTagIds(item.tags?.map(tag => tag.id.toString()) || []);
+          setSelectedTagIds(item.tags?.map(tag => tag.id?.toString()).filter((id): id is string => Boolean(id)) || []);
         }
 
         setStage("form");
