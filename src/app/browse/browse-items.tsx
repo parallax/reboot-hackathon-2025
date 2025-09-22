@@ -61,7 +61,7 @@ export function BrowseItems({
         </label>
         <MultiSelect
           options={categories}
-          value={selectedCategories}
+          defaultValue={selectedCategories}
           onValueChange={handleCategoriesChange}
           placeholder="Select categories"
         />
