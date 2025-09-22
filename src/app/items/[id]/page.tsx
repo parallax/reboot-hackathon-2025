@@ -79,12 +79,12 @@ export default function ItemPage() {
           return;
         }
 
-        setItem(itemResult.data!);
+        setItem(itemResult.data as ItemData);
 
         // Fetch user's items for offering
         const userItemsResult = await getUserListings();
         if (userItemsResult.success) {
-          setUserItems(userItemsResult.data || []);
+          setUserItems((userItemsResult.data as unknown as UserItem[]) || []);
         }
 
       } catch (err) {
