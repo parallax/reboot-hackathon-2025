@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { RefreshCcwDot } from "lucide-react";
 import {
   Select,
   SelectContent,
