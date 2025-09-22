@@ -8,13 +8,6 @@ import {
   primaryKey,
 } from "drizzle-orm/pg-core";
 
-// Users table (referenced by Clerk)
-export const userMetadata = pgTable("user_metadata", {
-  userId: text("user_id").primaryKey(),
-  location: text("location"),
-  onboardingComplete: timestamp("onboarding_complete"),
-});
-
 // Tags table
 export const tags = pgTable("tags", {
   id: serial("id").primaryKey(),
