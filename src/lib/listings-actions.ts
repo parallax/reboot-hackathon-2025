@@ -1,11 +1,11 @@
 "use server";
 
-import { db } from '@/db/index';
-import { items, itemTags, tags, userPreferences } from '@/db/schema';
-import { auth } from '@clerk/nextjs/server';
-import { createClerkClient } from '@clerk/backend';
-import { revalidatePath } from 'next/cache';
-import { eq, desc } from 'drizzle-orm';
+import { db } from "@/db/index";
+import { items, itemTags, tags, userPreferences } from "@/db/schema";
+import { auth } from "@clerk/nextjs/server";
+import { createClerkClient } from "@clerk/backend";
+import { revalidatePath } from "next/cache";
+import { eq, desc } from "drizzle-orm";
 
 export async function createListing(formData: {
   title: string;
@@ -43,7 +43,7 @@ export async function createListing(formData: {
     if (!formData.tagIds || formData.tagIds.length === 0) {
       return {
         success: false,
-        error: 'At least one category is required'
+        error: "At least one category is required",
       };
     }
 
@@ -61,7 +61,7 @@ export async function createListing(formData: {
       .returning();
 
     // Create multiple item-tag relationships
-    const itemTagValues = formData.tagIds.map(tagId => ({
+    const itemTagValues = formData.tagIds.map((tagId) => ({
       itemId: newItem.id,
       tagId: tagId,
     }));
@@ -132,7 +132,8 @@ export async function getUserListings(userId?: string) {
 
 export async function getActiveListings() {
   try {
-    const activeListings = await db
+    // First get all active items with their tag relationships
+    const itemsWithTags = await db
       .select({
         id: items.id,
         title: items.title,
@@ -148,6 +149,36 @@ export async function getActiveListings() {
       .leftJoin(tags, eq(itemTags.tagId, tags.id))
       .where(eq(items.active, true))
       .orderBy(desc(items.id));
+
+    // Group items by ID to handle multiple tags per item
+    const groupedItems = new Map();
+
+    for (const row of itemsWithTags) {
+      if (!groupedItems.has(row.id)) {
+        groupedItems.set(row.id, {
+          id: row.id,
+          title: row.title,
+          description: row.description,
+          imageUrl: row.imageUrl,
+          repeatable: row.repeatable,
+          userId: row.userId,
+          tagId: row.tagId, // Keep the first tag for compatibility
+          tagName: row.tagName, // Keep the first tag name for compatibility
+          tags: [],
+        });
+      }
+
+      // Add tag to the tags array if it exists
+      if (row.tagId && row.tagName) {
+        const item = groupedItems.get(row.id);
+        if (!item.tags.some((tag) => tag.id === row.tagId)) {
+          item.tags.push({ id: row.tagId, name: row.tagName });
+        }
+      }
+    }
+
+    // Convert map to array and maintain the original structure for compatibility
+    const activeListings = Array.from(groupedItems.values());
 
     return {
       success: true,
@@ -201,19 +232,20 @@ export async function getItemById(itemId: number) {
       }));
 
     // Get user name from Clerk for the item creator
-    let userName = 'Unknown User';
+    let userName = "Unknown User";
     try {
       const clerkClient = createClerkClient({
         secretKey: process.env.CLERK_SECRET_KEY!,
       });
       const user = await clerkClient.users.getUser(item.userId);
       if (user) {
-        userName = user.firstName && user.lastName 
-          ? `${user.firstName} ${user.lastName}` 
-          : user.firstName || user.username || 'Unknown User';
+        userName =
+          user.firstName && user.lastName
+            ? `${user.firstName} ${user.lastName}`
+            : user.firstName || user.username || "Unknown User";
       }
     } catch (error) {
-      console.error('Error fetching user from Clerk:', error);
+      console.error("Error fetching user from Clerk:", error);
       // Fallback to showing a shortened userId if we can't get the user info
       userName = `User ${item.userId.slice(0, 8)}...`;
     }
@@ -229,9 +261,9 @@ export async function getItemById(itemId: number) {
         active: item.active,
         userId: item.userId,
         userName: userName,
-        userLocation: item.userLocation || 'Location not specified',
-        tags: itemTags_list
-      }
+        userLocation: item.userLocation || "Location not specified",
+        tags: itemTags_list,
+      },
     };
   } catch (error) {
     console.error("Error fetching item:", error);
