@@ -103,7 +103,7 @@ export function BrowseItems({
             <CardHeader>
               <CardTitle className="text-primary-content">
                 <Link
-                  href={`/listing/${listing.id}`}
+                  href={`/items/${listing.id}`}
                   className="hover:text-primary transition-colors after:absolute after:inset-0 after:content-[''] after:z-10"
                 >
                   {listing.title}
