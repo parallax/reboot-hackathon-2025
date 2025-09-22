@@ -21,21 +21,17 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import type { Item, OfferHistory } from "@/db/schema";
 
-export type ItemSummary = {
-  id: number;
-  title: string;
-  description: string;
-  imageUrl: string | null;
-  repeatable: boolean;
-};
+export type ItemSummary = Pick<
+  Item,
+  "id" | "title" | "description" | "imageUrl" | "repeatable"
+>;
 
-export type OfferEntry = {
-  id: number;
-  createdAt: string | null;
-  expiry: string | null;
-  acceptedAt: string | null;
-  rejectedAt: string | null;
+export type OfferEntry = Pick<
+  OfferHistory,
+  "id" | "createdAt" | "expiry" | "acceptedAt" | "rejectedAt"
+> & {
   offeredItem: ItemSummary | null;
 };
 
@@ -55,9 +51,12 @@ const STATUS_LABEL: Record<OfferStatus, string> = {
 };
 
 const STATUS_BADGE: Record<OfferStatus, string> = {
-  pending: "bg-amber-200/70 text-amber-900 dark:bg-amber-400/15 dark:text-amber-200",
-  accepted: "bg-emerald-200/70 text-emerald-900 dark:bg-emerald-500/15 dark:text-emerald-300",
-  rejected: "bg-rose-200/70 text-rose-900 dark:bg-rose-500/15 dark:text-rose-300",
+  pending:
+    "bg-amber-200/70 text-amber-900 dark:bg-amber-400/15 dark:text-amber-200",
+  accepted:
+    "bg-emerald-200/70 text-emerald-900 dark:bg-emerald-500/15 dark:text-emerald-300",
+  rejected:
+    "bg-rose-200/70 text-rose-900 dark:bg-rose-500/15 dark:text-rose-300",
 };
 
 function resolveStatus(offer: OfferEntry): OfferStatus {
@@ -81,8 +80,8 @@ export function AllOffersView({ received, sent }: AllOffersViewProps) {
     []
   );
 
-  const formatDate = (value: string | null) =>
-    value ? dateFormatter.format(new Date(value)) : "Not set";
+  const formatDate = (value: Date | null) =>
+    value ? dateFormatter.format(value) : "Not set";
 
   const hasReceived = received.length > 0;
   const hasSent = sent.length > 0;
@@ -158,7 +157,7 @@ type OfferSectionProps = {
   title: string;
   description: string;
   groups: OfferGroup[];
-  formatDate: (value: string | null) => string;
+  formatDate: (value: Date | null) => string;
   context: OfferContext;
 };
 
@@ -196,7 +195,7 @@ function OfferSection({
 
 type OfferGroupCardProps = {
   group: OfferGroup;
-  formatDate: (value: string | null) => string;
+  formatDate: (value: Date | null) => string;
   context: OfferContext;
 };
 
@@ -207,9 +206,8 @@ function OfferGroupCard({ group, formatDate, context }: OfferGroupCardProps) {
   const headerBadgeLabel =
     context === "received" ? "Your listing" : "Offer sent";
   const headerButtonLabel =
-    context === "received" ? "Review details" : "View listing";
-  const headerButtonHref =
-    context === "received" ? `/offers/${group.item.id}` : `/items/${group.item.id}`;
+    context === "received" ? "Review details" : "View offer";
+  const headerButtonHref = `/offers/${group.item.id}`;
   const historyLabel =
     context === "received" ? "Offer history" : "Activity timeline";
   const latestSummaryLabel =
@@ -240,11 +238,17 @@ function OfferGroupCard({ group, formatDate, context }: OfferGroupCardProps) {
             </div>
             <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-3">
-                <Badge variant="outline" className="border-emerald-400/40 bg-emerald-400/10 text-emerald-600">
+                <Badge
+                  variant="outline"
+                  className="border-emerald-400/40 bg-emerald-400/10 text-emerald-600"
+                >
                   {headerBadgeLabel}
                 </Badge>
                 {group.item.repeatable ? (
-                  <Badge variant="outline" className="border-emerald-400/40 bg-emerald-400/10 text-emerald-600">
+                  <Badge
+                    variant="outline"
+                    className="border-emerald-400/40 bg-emerald-400/10 text-emerald-600"
+                  >
                     Repeatable
                   </Badge>
                 ) : null}
@@ -271,7 +275,11 @@ function OfferGroupCard({ group, formatDate, context }: OfferGroupCardProps) {
               {latestSummaryLabel}
             </span>
             <div className="flex flex-wrap items-center gap-3 text-primary-content">
-              <Badge className={`px-3 py-1 text-xs font-medium ${latestStatus ? STATUS_BADGE[latestStatus] : ""}`}>
+              <Badge
+                className={`px-3 py-1 text-xs font-medium ${
+                  latestStatus ? STATUS_BADGE[latestStatus] : ""
+                }`}
+              >
                 {latestStatus ? STATUS_LABEL[latestStatus] : "No status"}
               </Badge>
               <span className="inline-flex items-center gap-2">
@@ -279,7 +287,11 @@ function OfferGroupCard({ group, formatDate, context }: OfferGroupCardProps) {
                 Logged {formatDate(latestOffer.createdAt)}
               </span>
               <span className="inline-flex items-center gap-2 text-secondary-content/80">
-                Expires {latestOffer.expiry ? formatDate(latestOffer.expiry) : "Open offer"}
+                Expires {
+                  latestOffer.expiry
+                    ? formatDate(latestOffer.expiry)
+                    : "Open offer"
+                }
               </span>
             </div>
             {latestOffer.offeredItem ? (
@@ -300,7 +312,9 @@ function OfferGroupCard({ group, formatDate, context }: OfferGroupCardProps) {
             <Inbox className="size-4 text-emerald-500" />
             {historyLabel}
           </span>
-          <span>{group.offers.length} entr{group.offers.length === 1 ? "y" : "ies"}</span>
+          <span>
+            {group.offers.length} entr{group.offers.length === 1 ? "y" : "ies"}
+          </span>
         </div>
         <Separator className="bg-emerald-500/10" />
 
@@ -315,7 +329,9 @@ function OfferGroupCard({ group, formatDate, context }: OfferGroupCardProps) {
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-2 text-primary-content">
-                    <Badge className={`px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[status]}`}>
+                    <Badge
+                      className={`px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[status]}`}
+                    >
                       {STATUS_LABEL[status]}
                     </Badge>
                     <span>Created {formatDate(offer.createdAt)}</span>
@@ -341,7 +357,8 @@ function OfferGroupCard({ group, formatDate, context }: OfferGroupCardProps) {
                       {offer.offeredItem.title}
                     </p>
                     <p className="mt-1 text-sm leading-relaxed line-clamp-3">
-                      {offer.offeredItem.description || "No description provided."}
+                      {offer.offeredItem.description ||
+                        "No description provided."}
                     </p>
                   </div>
                 ) : null}
@@ -397,8 +414,8 @@ function EmptyState() {
           No offer activity yet
         </h2>
         <p className="max-w-lg text-secondary-content">
-          Once you start trading with the community, you&apos;ll see incoming swaps
-          and the offers you send all in one inbox.
+          Once you start trading with the community, you&apos;ll see incoming
+          swaps and the offers you send all in one inbox.
         </p>
       </div>
       <Button asChild>
@@ -410,4 +427,3 @@ function EmptyState() {
     </div>
   );
 }
-

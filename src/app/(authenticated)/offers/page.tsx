@@ -47,10 +47,10 @@ export default async function OffersPage() {
 
   const buildOfferEntry = (row: (typeof offerRows)[number]): OfferGroup["offers"][number] => ({
     id: row.offerId,
-    createdAt: row.createdAt?.toISOString() ?? null,
-    expiry: row.expiry?.toISOString() ?? null,
-    acceptedAt: row.acceptedAt?.toISOString() ?? null,
-    rejectedAt: row.rejectedAt?.toISOString() ?? null,
+    createdAt: row.createdAt ?? null,
+    expiry: row.expiry ?? null,
+    acceptedAt: row.acceptedAt ?? null,
+    rejectedAt: row.rejectedAt ?? null,
     offeredItem: row.offeredItemId
       ? {
           id: row.offeredItemId,
@@ -105,8 +105,8 @@ export default async function OffersPage() {
   const sortGroupOffers = (group: OfferGroup) => ({
     ...group,
     offers: group.offers.sort((a, b) => {
-      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      const aTime = a.createdAt?.getTime() ?? 0;
+      const bTime = b.createdAt?.getTime() ?? 0;
       return bTime - aTime;
     }),
   });
@@ -115,12 +115,8 @@ export default async function OffersPage() {
     groups
       .map(sortGroupOffers)
       .sort((a, b) => {
-        const latestA = a.offers[0]?.createdAt
-          ? new Date(a.offers[0].createdAt).getTime()
-          : 0;
-        const latestB = b.offers[0]?.createdAt
-          ? new Date(b.offers[0].createdAt).getTime()
-          : 0;
+        const latestA = a.offers[0]?.createdAt?.getTime() ?? 0;
+        const latestB = b.offers[0]?.createdAt?.getTime() ?? 0;
         return latestB - latestA;
       });
 

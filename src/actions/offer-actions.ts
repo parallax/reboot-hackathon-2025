@@ -59,7 +59,7 @@ export async function createOffer({
   await sendOfferEmail({
     itemId: itemId,
     offeredItemId: offeredItemId,
-    offerId: newOffer.id,
+    offerId: newOfferHistory.id,
     offererUserId: userId,
   });
 
