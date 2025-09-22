@@ -34,7 +34,9 @@ export const userTags = pgTable(
       .notNull()
       .references(() => tags.id, { onDelete: "cascade" }),
   },
-  (table) => [primaryKey({ columns: [table.userId, table.tagId, table.isOffer] })]
+  (table) => [
+    primaryKey({ columns: [table.userId, table.tagId, table.isOffer] }),
+  ]
 );
 
 // Items table
@@ -102,10 +104,13 @@ export const tagsRelations = relations(tags, ({ many }) => ({
   userTags: many(userTags),
 }));
 
-export const userPreferencesRelations = relations(userPreferences, ({ many }) => ({
-  items: many(items),
-  userTags: many(userTags),
-}));
+export const userPreferencesRelations = relations(
+  userPreferences,
+  ({ many }) => ({
+    items: many(items),
+    userTags: many(userTags),
+  })
+);
 
 export const itemsRelations = relations(items, ({ many, one }) => ({
   itemTags: many(itemTags),
@@ -157,7 +162,7 @@ export type ItemTags = typeof itemTags.$inferSelect & {
 export type Offers = typeof offers.$inferSelect;
 export type OfferHistory = typeof offerHistory.$inferSelect;
 export type Tag = typeof tags.$inferSelect & {
-  tagItems?: ItemTags[];
+  itemTags?: ItemTags[];
   userTags?: UserTags[];
 };
 

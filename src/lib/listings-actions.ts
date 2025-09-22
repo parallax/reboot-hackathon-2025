@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db/index";
-import { items, itemTags } from "@/db/schema";
+import { Item, items, itemTags } from "@/db/schema";
 import { auth } from "@clerk/nextjs/server";
 import { createClerkClient } from "@clerk/backend";
 import { revalidatePath } from "next/cache";
@@ -134,28 +134,42 @@ export async function getActiveListings({
   selectedCategories,
 }: {
   selectedCategories: string[];
-}) {
-  // Get all active items with their tags
-  const allActiveItems = await db.query.items.findMany({
+}): Promise<Item[]> {
+  if (!selectedCategories || selectedCategories.length === 0) {
+    return await db.query.items.findMany({
+      with: {
+        itemTags: {
+          with: {
+            tag: true,
+          },
+        },
+      },
+      where: eq(items.active, true),
+      orderBy: desc(items.id),
+    });
+  }
+
+  // Convert string category IDs to numbers
+  const categoryIds = selectedCategories.map((id) => parseInt(id));
+
+  // Get items that have any of the selected tags
+  const itemsWithMatchingTags = await db.query.items.findMany({
     with: {
       itemTags: {
         with: {
           tag: true,
-          item: true,
         },
       },
     },
     where: eq(items.active, true),
-    orderBy: desc(items.id),
   });
 
-  // Filter items that have at least one tag matching selected categories
-  const selectedCategoryIds = selectedCategories.map(Number);
-  return allActiveItems.filter((item) =>
-    item.itemTags?.some(
-      (tagItem) => tagItem.tag && selectedCategoryIds.includes(tagItem.tag.id)
-    )
+  // Filter items that have at least one matching tag
+  const filteredItems = itemsWithMatchingTags.filter((item) =>
+    item.itemTags?.some((itemTag) => categoryIds.includes(itemTag.tagId))
   );
+
+  return filteredItems;
 }
 
 export async function getItemById(itemId: number) {
