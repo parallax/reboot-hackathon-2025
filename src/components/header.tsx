@@ -13,7 +13,7 @@ type HeaderProps = {
 
 export function Header({ debugEnabled = false }: HeaderProps) {
   return (
-    <header className="sticky top-0 z-50 bg-surface border-b border-border backdrop-blur-sm bg-surface/95">
+    <header className="sticky top-0 z-50 bg-surface border-b border-border  bg-white">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <Button variant="ghost" size="icon" className="md:hidden">
