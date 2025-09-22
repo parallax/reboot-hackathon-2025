@@ -6,6 +6,8 @@ import { auth } from "@clerk/nextjs/server";
 import { createClerkClient } from "@clerk/backend";
 import { revalidatePath } from "next/cache";
 import { eq, desc } from "drizzle-orm";
+import { embed } from 'ai'
+import { openai } from '@ai-sdk/openai'
 
 export async function createListing(formData: {
   title: string;
@@ -47,6 +49,11 @@ export async function createListing(formData: {
       };
     }
 
+    const { embedding } = await embed({
+      model: openai.embedding('text-embedding-3-small'),
+      value: formData.title.trim() + " " + formData.description.trim() + " " + formData.tagIds.join(" "),
+    })
+
     // Create the listing in the database
     const [newItem] = await db
       .insert(items)
@@ -57,6 +64,7 @@ export async function createListing(formData: {
         imageUrl: formData.imageUrl || null,
         repeatable: formData.repeatable,
         active: true, // New listings are active by default
+        embedding: embedding,
       })
       .returning();
 
@@ -311,6 +319,11 @@ export async function updateItem(
       };
     }
 
+    const { embedding } = await embed({
+      model: openai.embedding('text-embedding-3-small'),
+      value: formData.title.trim() + " " + formData.description.trim() + " " + formData.tagIds.join(" "),
+    })
+
     // Update the item in the database
     const [updatedItem] = await db
       .update(items)
@@ -320,6 +333,7 @@ export async function updateItem(
         imageUrl: formData.imageUrl || null,
         repeatable: formData.repeatable,
         active: formData.active,
+        embedding: embedding,
       })
       .where(eq(items.id, itemId))
       .returning();
