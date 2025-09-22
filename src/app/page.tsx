@@ -2,9 +2,9 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 
-import { LandingPage } from "@/components/landing-page";
 import { db } from "@/db";
 import { userPreferences } from "@/db/schema";
+import { MarketingLanding } from "@/components/marketing-landing";
 
 export default async function Home() {
   const { userId } = await auth();
@@ -23,5 +23,5 @@ export default async function Home() {
     redirect("/browse");
   }
 
-  return <LandingPage />;
+  return <MarketingLanding />;
 }

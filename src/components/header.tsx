@@ -1,9 +1,17 @@
+"use client";
 import { Search, Menu, RefreshCcwDot, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import Link from "next/link";
 
-export function Header() {
+import { DebugMenu } from "@/components/debug-menu";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
+
+type HeaderProps = {
+  debugEnabled?: boolean;
+};
+
+export function Header({ debugEnabled = false }: HeaderProps) {
   return (
     <header className="sticky top-0 z-50 bg-surface border-b border-border backdrop-blur-sm bg-surface/95">
       <div className="container mx-auto px-4">
@@ -39,26 +47,55 @@ export function Header() {
 
             {/* Navigation icons */}
             <div className="flex items-center">
-              <Link href="/create-listing">
+              <Link href="/create-item">
                 <Button
                   variant="default"
                   size="sm"
-                  className="bg-primary hover:bg-emerald-700 text-white hidden sm:flex items-center gap-2"
+                  className="mr-2 bg-primary hover:bg-emerald-700 text-white hidden sm:flex items-center gap-2"
                 >
                   <Plus className="h-4 w-4" />
                   Create Listing
                 </Button>
               </Link>
 
-              <Link href="/create-listing" className="sm:hidden">
+              <Link href="/create-item" className="sm:hidden">
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="border border-emerald-600 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                  className="mr-2 border border-emerald-600 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
                 >
                   <Plus className="h-4 w-4" />
                 </Button>
               </Link>
+
+              {/* Auth: Clerk user menu */}
+              <div className="ml-2 flex items-center">
+                <SignedIn>
+                  <UserButton
+                    userProfileUrl="/profile-setup"
+                    appearance={{
+                      elements: { userButtonAvatarBox: "h-8 w-8" },
+                    }}
+                  >
+                    <UserButton.MenuItems>
+                      <UserButton.Link
+                        label="Profile settings"
+                        href="/profile-setup"
+                      />
+                      <UserButton.Action label="Sign out" action="signOut" />
+                    </UserButton.MenuItems>
+                  </UserButton>
+                </SignedIn>
+                <SignedOut>
+                  <SignInButton mode="redirect">
+                    <Button variant="outline" size="sm" className="ml-1">
+                      Sign in
+                    </Button>
+                  </SignInButton>
+                </SignedOut>
+              </div>
+
+              {debugEnabled ? <DebugMenu /> : null}
             </div>
           </div>
         </div>

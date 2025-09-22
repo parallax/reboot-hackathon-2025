@@ -14,9 +14,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getTags } from '@/lib/tags-utils';
-import { createListing } from '@/lib/listings-actions';
+import { createItem } from '@/lib/listings-actions';
 
-export default function CreateListingPage() {
+export default function CreateItemPage() {
   const [stage, setStage] = useState<"form" | "loading" | "complete">("form");
   const [title, setTitle] = useState<string>("");
   const [description, setDescription] = useState<string>("");
@@ -134,8 +134,8 @@ export default function CreateListingPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
+    e?.preventDefault();
     setSubmitError("");
 
     if (!validateForm()) {
@@ -155,8 +155,8 @@ export default function CreateListingPage() {
         }
       }
 
-      // Create the listing in the database
-      const result = await createListing({
+      // Create the item in the database
+      const result = await createItem({
         title,
         description,
         imageUrl: uploadedImageUrl,
@@ -165,7 +165,7 @@ export default function CreateListingPage() {
       });
 
       if (!result.success) {
-        throw new Error(result.error || "Failed to create listing");
+        throw new Error(result.error || "Failed to create item");
       }
 
       // Move to complete stage
@@ -178,7 +178,7 @@ export default function CreateListingPage() {
 
     } catch (error) {
       console.error("Submission failed:", error);
-      setSubmitError(error instanceof Error ? error.message : "Failed to create listing. Please try again.");
+      setSubmitError(error instanceof Error ? error.message : "Failed to create item. Please try again.");
       setStage("form");
     }
   };
@@ -186,11 +186,11 @@ export default function CreateListingPage() {
   // Render different stages
   if (stage === "loading") {
     return (
-      <div className="flex flex-col items-center justify-center bg-surface p-4">
+      <div className="fixed inset-0 flex flex-col items-center justify-center bg-surface z-50">
         <div className="flex flex-col items-center">
           <RefreshCcwDot className="h-16 w-16 text-primary animate-spin" />
           <h2 className="text-2xl font-bold font-brand text-primary-content mt-4">
-            Creating your listing...
+            Creating your item...
           </h2>
           <p className="text-muted-content mt-2">
             Please wait while we set up your offer
@@ -202,16 +202,16 @@ export default function CreateListingPage() {
 
   if (stage === "complete") {
     return (
-      <div className="flex flex-col items-center justify-center bg-surface p-4">
+      <div className="fixed inset-0 flex flex-col items-center justify-center bg-surface z-50">
         <div className="flex flex-col items-center">
           <div className="relative">
             <RefreshCcwDot className="h-16 w-16 text-primary animate-pulse" />
             <CheckCircle className="h-8 w-8 text-green-500 absolute -bottom-2 -right-2 bg-surface rounded-full" />
           </div>
           <h2 className="text-2xl font-bold font-brand text-primary-content mt-4">
-            Listing Created!
+            Item Created!
           </h2>
-          <p className="text-muted-content mt-2">
+          <p className="text-muted-content text-center mt-2 px-8">
             Your offer has been successfully added to the community
           </p>
           <div className="mt-6 flex space-x-2">
@@ -231,17 +231,20 @@ export default function CreateListingPage() {
   }
 
   return (
-    <div className="flex flex-col bg-surface p-4">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-primary-content mb-2">
-          Create Listing
-        </h1>
-        <p className="text-muted-content">
-          Share what you can offer with the community
-        </p>
-      </div>
+    <div className="flex flex-col min-h-screen bg-surface">
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-4 pb-24">
+          <div className="mb-8">
+            <h1 className="text-2xl font-bold text-primary-content mb-2">
+              Create Item
+            </h1>
+            <p className="text-muted-content">
+              Share what you can offer with the community
+            </p>
+          </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-6">
         {/* Title */}
         <div>
           <label className="block text-sm font-medium text-secondary-content mb-2">
@@ -427,7 +430,7 @@ export default function CreateListingPage() {
         {/* Repeatable */}
         <div>
           <label className="block text-sm font-medium text-secondary-content mb-2">
-            Listing Type
+Item Type
           </label>
           <div className="space-y-3">
             <div className="flex items-center space-x-3">
@@ -459,18 +462,26 @@ export default function CreateListingPage() {
           </div>
         </div>
 
-        {/* Error Display */}
-        {submitError && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-            <p className="text-red-600 dark:text-red-400 text-sm">{submitError}</p>
+            {/* Error Display */}
+            {submitError && (
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                <p className="text-red-600 dark:text-red-400 text-sm">{submitError}</p>
+              </div>
+            )}
           </div>
-        )}
+        </div>
+      </div>
 
-        {/* Submit Button */}
-        <Button type="submit" className="w-full py-6 body-large">
-          Create Listing
+      {/* Floating Create Button */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-surface border-t border-gray-200 dark:border-gray-700">
+        <Button
+          onClick={handleSubmit}
+          className="w-full py-4 text-lg font-semibold shadow-lg"
+          size="lg"
+        >
+          Create Item
         </Button>
-      </form>
+      </div>
     </div>
   );
 }
