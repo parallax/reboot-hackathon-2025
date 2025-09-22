@@ -152,7 +152,7 @@ export default function ListingPage() {
           <CardHeader>
             <CardTitle className="text-primary-content">Listing Not Found</CardTitle>
             <CardDescription className="text-secondary-content">
-              The listing you're looking for doesn't exist or has been removed.
+              The listing you&apos;re looking for doesn&apos;t exist or has been removed.
             </CardDescription>
           </CardHeader>
         </Card>
