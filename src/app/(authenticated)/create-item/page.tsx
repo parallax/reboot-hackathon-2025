@@ -6,21 +6,15 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { getTags } from '@/lib/tags-utils';
 import { createItem } from '@/lib/listings-actions';
+import { MultiSelect } from '@/components/ui/multi-select';
 
 export default function CreateItemPage() {
   const [stage, setStage] = useState<"form" | "loading" | "complete">("form");
   const [title, setTitle] = useState<string>("");
   const [description, setDescription] = useState<string>("");
-  const [selectedTagId, setSelectedTagId] = useState<string>("");
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imageUrl, setImageUrl] = useState<string>("");
   const [imagePreview, setImagePreview] = useState<string>("");
@@ -126,8 +120,8 @@ export default function CreateItemPage() {
       newErrors.description = "Description is required";
     }
 
-    if (!selectedTagId) {
-      newErrors.category = "Category is required";
+    if (selectedTagIds.length === 0) {
+      newErrors.category = "At least one category is required";
     }
 
     setErrors(newErrors);
@@ -160,7 +154,7 @@ export default function CreateItemPage() {
         title,
         description,
         imageUrl: uploadedImageUrl,
-        tagId: parseInt(selectedTagId),
+        tagIds: selectedTagIds.map(id => parseInt(id)),
         repeatable,
       });
 
@@ -405,23 +399,23 @@ export default function CreateItemPage() {
           </div>
         </div>
 
-        {/* Category */}
+        {/* Categories */}
         <div>
           <label className="block text-sm font-medium text-secondary-content mb-2">
-            Category
+            Categories
           </label>
-          <Select value={selectedTagId} onValueChange={setSelectedTagId}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select a category" />
-            </SelectTrigger>
-            <SelectContent>
-              {availableTags.map((tag) => (
-                <SelectItem key={tag.id} value={tag.id.toString()}>
-                  {tag.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <MultiSelect
+            options={availableTags.map((tag) => ({
+              value: tag.id.toString(),
+              label: tag.name
+            }))}
+            defaultValue={selectedTagIds}
+            onValueChange={setSelectedTagIds}
+            placeholder="Select categories for your item"
+            emptyIndicator="No categories found"
+            maxCount={3}
+            hideSelectAll
+          />
           {errors.category && (
             <p className="text-destructive text-sm mt-1">{errors.category}</p>
           )}

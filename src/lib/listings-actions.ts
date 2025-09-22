@@ -10,7 +10,7 @@ export async function createListing(formData: {
   title: string;
   description: string;
   imageUrl: string;
-  tagId: number;
+  tagIds: number[];
   repeatable: boolean;
 }) {
   try {
@@ -39,10 +39,10 @@ export async function createListing(formData: {
       };
     }
 
-    if (!formData.tagId) {
+    if (!formData.tagIds || formData.tagIds.length === 0) {
       return {
         success: false,
-        error: 'Category is required'
+        error: 'At least one category is required'
       };
     }
 
@@ -56,11 +56,13 @@ export async function createListing(formData: {
       active: true, // New listings are active by default
     }).returning();
 
-    // Create the item-tag relationship
-    await db.insert(itemTags).values({
+    // Create multiple item-tag relationships
+    const itemTagValues = formData.tagIds.map(tagId => ({
       itemId: newItem.id,
-      tagId: formData.tagId,
-    });
+      tagId: tagId,
+    }));
+
+    await db.insert(itemTags).values(itemTagValues);
 
     // Revalidate the listings page to show the new listing
     revalidatePath('/');
