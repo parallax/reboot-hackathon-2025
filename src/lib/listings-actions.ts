@@ -246,5 +246,120 @@ export async function getItemById(itemId: number) {
   }
 }
 
+export async function updateItem(
+  itemId: number,
+  formData: {
+    title: string;
+    description: string;
+    imageUrl: string;
+    tagIds: number[];
+    repeatable: boolean;
+    active: boolean;
+  }
+) {
+  try {
+    // Get authenticated user
+    const { userId } = await auth();
+
+    if (!userId) {
+      return {
+        success: false,
+        error: "You must be signed in to update an item",
+      };
+    }
+
+    // Check if the item exists and belongs to the user
+    const existingItem = await db
+      .select()
+      .from(items)
+      .where(eq(items.id, itemId))
+      .limit(1);
+
+    if (existingItem.length === 0) {
+      return {
+        success: false,
+        error: "Item not found",
+      };
+    }
+
+    if (existingItem[0].userId !== userId) {
+      return {
+        success: false,
+        error: "You can only edit your own items",
+      };
+    }
+
+    // Validate required fields
+    if (!formData.title.trim()) {
+      return {
+        success: false,
+        error: "Title is required",
+      };
+    }
+
+    if (!formData.description.trim()) {
+      return {
+        success: false,
+        error: "Description is required",
+      };
+    }
+
+    if (!formData.tagIds || formData.tagIds.length === 0) {
+      return {
+        success: false,
+        error: "At least one category is required",
+      };
+    }
+
+    // Update the item in the database
+    const [updatedItem] = await db
+      .update(items)
+      .set({
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        imageUrl: formData.imageUrl || null,
+        repeatable: formData.repeatable,
+        active: formData.active,
+      })
+      .where(eq(items.id, itemId))
+      .returning();
+
+    // Delete existing item-tag relationships
+    await db.delete(itemTags).where(eq(itemTags.itemId, itemId));
+
+    // Create new item-tag relationships
+    const itemTagValues = formData.tagIds.map((tagId) => ({
+      itemId: itemId,
+      tagId: tagId,
+    }));
+
+    await db.insert(itemTags).values(itemTagValues);
+
+    // Revalidate relevant pages
+    revalidatePath("/");
+    revalidatePath("/listings");
+    revalidatePath(`/items/${itemId}`);
+    revalidatePath(`/edit-item/${itemId}`);
+
+    return {
+      success: true,
+      data: {
+        id: updatedItem.id,
+        title: updatedItem.title,
+        description: updatedItem.description,
+        imageUrl: updatedItem.imageUrl,
+        repeatable: updatedItem.repeatable,
+        active: updatedItem.active,
+      },
+    };
+  } catch (error) {
+    console.error("Error updating item:", error);
+    return {
+      success: false,
+      error: "Failed to update item. Please try again.",
+    };
+  }
+}
+
 // Alias for createListing to match the UI naming
 export const createItem = createListing;
