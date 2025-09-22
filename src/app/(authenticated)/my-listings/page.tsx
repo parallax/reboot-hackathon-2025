@@ -237,7 +237,7 @@ export default async function MyListingsPage() {
                   key={item.id}
                   className="border border-emerald-500/10 bg-surface-secondary/80 shadow-sm"
                 >
-                  <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between pt-4">
                     <div className="flex flex-1 flex-col gap-4 sm:flex-row">
                       <div className="relative size-20 flex-none overflow-hidden rounded-xl border border-emerald-500/20 bg-surface-tertiary/60">
                         {item.imageUrl ? (
