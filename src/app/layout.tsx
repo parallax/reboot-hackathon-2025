@@ -38,7 +38,9 @@ export default function RootLayout({
       >
         <ClerkProvider>
           <Header debugEnabled={debugEnabled} />
-          <main className="min-h-screen">{children}</main>
+          <main className="min-h-screen container mx-auto px-4">
+            {children}
+          </main>
           <Footer />
         </ClerkProvider>
       </body>
