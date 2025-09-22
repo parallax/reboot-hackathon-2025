@@ -17,10 +17,10 @@ export function Header() {
             href="/"
             className="flex items-center md:static absolute left-1/2 transform md:transform-none -translate-x-1/2 md:translate-x-0"
           >
-            <div className="w-8 h-8 bg-emerald-600 dark:bg-emerald-500 rounded-lg flex items-center justify-center sm:flex hidden">
+            <div className="w-8 h-8 bg-primary dark:bg-emerald-500 rounded-lg flex items-center justify-center sm:flex hidden">
               <RefreshCcwDot className="h-4 w-4 text-white" />
             </div>
-            <span className="font-brand font-bold text-lg text-emerald-600 dark:text-white pl-2">
+            <span className="font-brand font-bold text-lg text-primary dark:text-white pl-2">
               swapable
             </span>
           </Link>
