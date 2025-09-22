@@ -6,11 +6,7 @@ import { createClerkClient } from "@clerk/backend";
 
 import { db } from "@/db";
 import { items, offerHistory } from "@/db/schema";
-import {
-  AllOffersView,
-  type OfferGroup,
-  type ItemSummary,
-} from "./all-offers-view";
+import { AllOffersView, type OfferGroup } from "./all-offers-view";
 
 export default async function OffersPage() {
   const { userId } = await auth();
@@ -40,6 +36,7 @@ export default async function OffersPage() {
       expiry: offerHistory.expiry,
       acceptedAt: offerHistory.acceptedAt,
       rejectedAt: offerHistory.rejectedAt,
+      rejectReason: offerHistory.rejectReason,
     })
     .from(offerHistory)
     .innerJoin(items, eq(items.id, offerHistory.itemId))
@@ -75,10 +72,10 @@ export default async function OffersPage() {
     row: (typeof offerRows)[number]
   ): OfferGroup["offers"][number] => ({
     id: row.offerId,
-    createdAt: row.createdAt?.toISOString() ?? null,
-    expiry: row.expiry?.toISOString() ?? null,
-    acceptedAt: row.acceptedAt?.toISOString() ?? null,
-    rejectedAt: row.rejectedAt?.toISOString() ?? null,
+    createdAt: row.createdAt ?? null,
+    expiry: row.expiry ?? null,
+    acceptedAt: row.acceptedAt ?? null,
+    rejectedAt: row.rejectedAt ?? null,
     offeredItem: row.offeredItemId
       ? {
           id: row.offeredItemId,
@@ -88,8 +85,13 @@ export default async function OffersPage() {
           repeatable: row.offeredItemRepeatable ?? false,
         }
       : null,
-    offererName: row.offeredItemOwnerId ? userNames.get(row.offeredItemOwnerId) : undefined,
-    targetUserName: row.itemOwnerId ? userNames.get(row.itemOwnerId) : undefined,
+    rejectionReason: row.rejectReason ?? null,
+    offererName: row.offeredItemOwnerId
+      ? userNames.get(row.offeredItemOwnerId)
+      : undefined,
+    targetUserName: row.itemOwnerId
+      ? userNames.get(row.itemOwnerId)
+      : undefined,
   });
 
   const receivedMap = new Map<number, OfferGroup>();

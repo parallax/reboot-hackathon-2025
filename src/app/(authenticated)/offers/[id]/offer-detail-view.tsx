@@ -1,8 +1,16 @@
 "use client";
 
-import { useMemo, useState, type ComponentType } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+  type ComponentType,
+  type ReactNode,
+} from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Clock,
@@ -22,6 +30,8 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
+import { respondToOffer } from "@/actions/offer-actions";
 
 type ItemSummary = {
   id: number;
@@ -37,6 +47,7 @@ type OfferEntry = {
   expiry: string | null;
   acceptedAt: string | null;
   rejectedAt: string | null;
+  rejectionReason: string | null;
   offeredItem: ItemSummary | null;
 };
 
@@ -54,9 +65,12 @@ const STATUS_COPY: Record<OfferStatus, string> = {
 };
 
 const STATUS_BADGE: Record<OfferStatus, string> = {
-  pending: "bg-amber-200/70 text-amber-900 dark:bg-amber-400/20 dark:text-amber-200",
-  accepted: "bg-emerald-200/70 text-emerald-900 dark:bg-emerald-500/15 dark:text-emerald-300",
-  rejected: "bg-rose-200/70 text-rose-900 dark:bg-rose-500/15 dark:text-rose-300",
+  pending:
+    "bg-amber-200/70 text-amber-900 dark:bg-amber-400/20 dark:text-amber-200",
+  accepted:
+    "bg-emerald-200/70 text-emerald-900 dark:bg-emerald-500/15 dark:text-emerald-300",
+  rejected:
+    "bg-rose-200/70 text-rose-900 dark:bg-rose-500/15 dark:text-rose-300",
 };
 
 function resolveStatus(offer: OfferEntry): OfferStatus {
@@ -69,6 +83,29 @@ export function OfferDetailView({ item, offers }: OfferDetailViewProps) {
   const [activeTab, setActiveTab] = useState<"recent" | "history">("recent");
 
   const latestOffer = useMemo(() => offers.at(0) ?? null, [offers]);
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [showDeclineForm, setShowDeclineForm] = useState(false);
+  const [declineReason, setDeclineReason] = useState("");
+  const [statusMessage, setStatusMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+
+  const respondableOffer = offers.find(
+    (offer) => !offer.acceptedAt && !offer.rejectedAt
+  )
+    ? offers.find((offer) => !offer.acceptedAt && !offer.rejectedAt)
+    : null;
+
+  useEffect(() => {
+    if (!respondableOffer) {
+      setShowDeclineForm(false);
+      setDeclineReason("");
+      setStatusMessage(null);
+    }
+  }, [respondableOffer]);
+
   const dateFormatter = useMemo(
     () =>
       new Intl.DateTimeFormat(undefined, {
@@ -80,6 +117,121 @@ export function OfferDetailView({ item, offers }: OfferDetailViewProps) {
 
   const formatDateTime = (value: string | null) =>
     value ? dateFormatter.format(new Date(value)) : "Not set";
+
+  const handleRespond = (decision: "accept" | "reject") => {
+    if (!respondableOffer) {
+      return;
+    }
+
+    setStatusMessage(null);
+
+    if (decision === "reject") {
+      const message = declineReason.trim();
+      if (!message) {
+        setStatusMessage({
+          type: "error",
+          text: "Please provide a reason for declining before submitting.",
+        });
+        return;
+      }
+    }
+
+    startTransition(async () => {
+      const result = await respondToOffer({
+        offerHistoryId: respondableOffer.id,
+        decision,
+        reason: decision === "reject" ? declineReason.trim() : undefined,
+      });
+
+      if (!result.success) {
+        setStatusMessage({
+          type: "error",
+          text: result.error ?? "Failed to update the offer. Please try again.",
+        });
+        return;
+      }
+
+      setStatusMessage({
+        type: "success",
+        text:
+          decision === "accept"
+            ? "Offer marked as accepted."
+            : "Offer declined.",
+      });
+
+      if (decision === "reject") {
+        setDeclineReason("");
+      }
+
+      setShowDeclineForm(false);
+      router.refresh();
+    });
+  };
+
+  const respondPanel = respondableOffer ? (
+    <div className="mt-4 space-y-4 rounded-2xl border border-emerald-500/20 bg-surface/70 p-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-1">
+          <p className="text-sm font-semibold text-primary-content">
+            Respond to this offer
+          </p>
+          <p className="text-sm text-secondary-content">
+            Accept to move forward or decline with a brief explanation.
+          </p>
+        </div>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setStatusMessage(null);
+              setShowDeclineForm((prev) => !prev);
+            }}
+            disabled={isPending}
+          >
+            {showDeclineForm ? "Cancel decline" : "Decline with reason"}
+          </Button>
+          <Button
+            onClick={() => handleRespond("accept")}
+            disabled={isPending}
+            className="bg-emerald-600 text-white hover:bg-emerald-700"
+          >
+            {isPending ? "Saving..." : "Accept offer"}
+          </Button>
+        </div>
+      </div>
+      {statusMessage ? (
+        <p
+          className={`text-sm ${
+            statusMessage.type === "error"
+              ? "text-rose-500"
+              : "text-emerald-500"
+          }`}
+        >
+          {statusMessage.text}
+        </p>
+      ) : null}
+      {showDeclineForm ? (
+        <div className="space-y-3">
+          <Textarea
+            value={declineReason}
+            onChange={(event) => setDeclineReason(event.target.value)}
+            placeholder="Share a quick note about why you're declining..."
+            rows={4}
+          />
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <Button
+              variant="secondary"
+              className="bg-rose-500 text-white hover:bg-rose-600"
+              onClick={() => handleRespond("reject")}
+              disabled={isPending}
+            >
+              {isPending ? "Submitting..." : "Submit decline"}
+            </Button>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  ) : null;
 
   return (
     <div className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 overflow-hidden bg-surface px-4 pb-16 pt-10 sm:px-8">
@@ -124,8 +276,16 @@ export function OfferDetailView({ item, offers }: OfferDetailViewProps) {
           <div className="inline-flex w-full items-center justify-between gap-4 rounded-full border border-emerald-500/20 bg-surface-tertiary/60 p-1 sm:w-auto">
             {(
               [
-                { key: "recent" as const, label: "Latest offer", icon: WandSparkles },
-                { key: "history" as const, label: "Offer history", icon: History },
+                {
+                  key: "recent" as const,
+                  label: "Latest offer",
+                  icon: WandSparkles,
+                },
+                {
+                  key: "history" as const,
+                  label: "Offer history",
+                  icon: History,
+                },
               ] satisfies Array<{
                 key: "recent" | "history";
                 label: string;
@@ -142,7 +302,11 @@ export function OfferDetailView({ item, offers }: OfferDetailViewProps) {
                     : "text-secondary-content hover:text-primary"
                 }`}
               >
-                <Icon className={`size-4 ${activeTab === key ? "scale-110" : "opacity-70"}`} />
+                <Icon
+                  className={`size-4 ${
+                    activeTab === key ? "scale-110" : "opacity-70"
+                  }`}
+                />
                 {label}
                 {key === "history" && offers.length > 0 && (
                   <span className="ml-1 inline-flex h-5 min-w-[1.5rem] items-center justify-center rounded-full bg-black/10 px-2 text-xs text-primary-content dark:bg-white/10">
@@ -161,6 +325,7 @@ export function OfferDetailView({ item, offers }: OfferDetailViewProps) {
             item={item}
             latestOffer={latestOffer}
             formatDateTime={formatDateTime}
+            respondSlot={respondPanel}
           />
         ) : (
           <OfferHistoryPanel
@@ -178,10 +343,12 @@ function LatestOfferPanel({
   item,
   latestOffer,
   formatDateTime,
+  respondSlot,
 }: {
   item: ItemSummary;
   latestOffer: OfferEntry | null;
   formatDateTime: (value: string | null) => string;
+  respondSlot?: ReactNode;
 }) {
   if (!latestOffer) {
     return (
@@ -216,7 +383,11 @@ function LatestOfferPanel({
       </CardHeader>
       <CardContent className="space-y-6 pt-6">
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <OfferItemCard item={item} label="What you're offering" accent="owner" />
+          <OfferItemCard
+            item={item}
+            label="What you're offering"
+            accent="owner"
+          />
           <OfferItemCard
             item={latestOffer.offeredItem}
             label="What they're proposing"
@@ -235,7 +406,11 @@ function LatestOfferPanel({
           <OfferMeta
             icon={WandSparkles}
             label="Expiry"
-            value={latestOffer.expiry ? formatDateTime(latestOffer.expiry) : "Open offer"}
+            value={
+              latestOffer.expiry
+                ? formatDateTime(latestOffer.expiry)
+                : "Open offer"
+            }
           />
           <OfferMeta
             icon={RefreshCcwDot}
@@ -243,6 +418,14 @@ function LatestOfferPanel({
             value={STATUS_COPY[status]}
           />
         </div>
+
+        {status === "rejected" && latestOffer.rejectionReason ? (
+          <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 p-4 text-sm text-rose-600">
+            Decline reason: {latestOffer.rejectionReason}
+          </div>
+        ) : null}
+
+        {respondSlot ? <div className="pt-2">{respondSlot}</div> : null}
       </CardContent>
     </Card>
   );
@@ -285,7 +468,9 @@ function OfferHistoryPanel({
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <CardTitle className="text-xl text-primary-content">
-                      {isMostRecent ? "Most recent exchange" : `Offer #${offers.length - index}`}
+                      {isMostRecent
+                        ? "Most recent exchange"
+                        : `Offer #${offers.length - index}`}
                     </CardTitle>
                     <CardDescription className="text-secondary-content">
                       Logged {formatDateTime(offer.createdAt)}
@@ -316,22 +501,36 @@ function OfferHistoryPanel({
 
                 <div className="grid gap-3 text-sm text-secondary-content sm:grid-cols-2">
                   <span>
-                    <strong className="mr-1 font-medium text-primary-content">Created:</strong>
+                    <strong className="mr-1 font-medium text-primary-content">
+                      Created:
+                    </strong>
                     {formatDateTime(offer.createdAt)}
                   </span>
                   <span>
-                    <strong className="mr-1 font-medium text-primary-content">Expiry:</strong>
+                    <strong className="mr-1 font-medium text-primary-content">
+                      Expiry:
+                    </strong>
                     {offer.expiry ? formatDateTime(offer.expiry) : "Open offer"}
                   </span>
                   <span>
-                    <strong className="mr-1 font-medium text-primary-content">Accepted:</strong>
+                    <strong className="mr-1 font-medium text-primary-content">
+                      Accepted:
+                    </strong>
                     {offer.acceptedAt ? formatDateTime(offer.acceptedAt) : "—"}
                   </span>
                   <span>
-                    <strong className="mr-1 font-medium text-primary-content">Rejected:</strong>
+                    <strong className="mr-1 font-medium text-primary-content">
+                      Rejected:
+                    </strong>
                     {offer.rejectedAt ? formatDateTime(offer.rejectedAt) : "—"}
                   </span>
                 </div>
+
+                {status === "rejected" && offer.rejectionReason ? (
+                  <p className="text-sm text-rose-500">
+                    Decline reason: {offer.rejectionReason}
+                  </p>
+                ) : null}
               </CardContent>
             </Card>
           </div>
@@ -419,7 +618,9 @@ function OfferMeta({
         <span className="text-xs font-semibold uppercase tracking-wide text-secondary-content">
           {label}
         </span>
-        <span className="text-sm font-medium text-primary-content">{value}</span>
+        <span className="text-sm font-medium text-primary-content">
+          {value}
+        </span>
       </div>
     </div>
   );
@@ -437,8 +638,12 @@ function EmptyState({
       <CardContent className="flex flex-col items-center gap-4 py-12">
         <WandSparkles className="size-10 text-emerald-400" />
         <div className="space-y-2">
-          <h2 className="text-2xl font-semibold text-primary-content">{title}</h2>
-          <p className="mx-auto max-w-md text-secondary-content">{description}</p>
+          <h2 className="text-2xl font-semibold text-primary-content">
+            {title}
+          </h2>
+          <p className="mx-auto max-w-md text-secondary-content">
+            {description}
+          </p>
         </div>
         <Button variant="outline" asChild>
           <Link href="/browse">

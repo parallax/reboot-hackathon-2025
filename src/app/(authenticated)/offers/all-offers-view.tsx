@@ -14,6 +14,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import type { Item, OfferHistory } from "@/db/schema";
 
 export type ItemSummary = Pick<
@@ -26,6 +27,7 @@ export type OfferEntry = Pick<
   "id" | "createdAt" | "expiry" | "acceptedAt" | "rejectedAt"
 > & {
   offeredItem: ItemSummary | null;
+  rejectionReason: OfferHistory["rejectReason"] | null;
   offererName?: string;
   targetUserName?: string;
 };
@@ -364,6 +366,9 @@ function OfferGroupCard({ group, formatDate, context }: OfferGroupCardProps) {
     context === "received"
       ? "Latest offer summary"
       : "Latest update on your offer";
+  const historyLabel = context === "received" ? "Offer history" : "Your offers";
+  const offeredItemLabel =
+    context === "received" ? "Offered item" : "Your item";
 
   return (
     <Card className="border border-emerald-500/10 bg-surface-secondary/80">
@@ -408,7 +413,9 @@ function OfferGroupCard({ group, formatDate, context }: OfferGroupCardProps) {
             </span>
             <div className="flex flex-wrap items-center gap-3 text-primary-content">
               <Badge
-                className={`px-3 py-1 text-xs font-medium ${latestStatus ? STATUS_BADGE[latestStatus] : ""}`}
+                className={`px-3 py-1 text-xs font-medium ${
+                  latestStatus ? STATUS_BADGE[latestStatus] : ""
+                }`}
               >
                 {latestStatus ? STATUS_LABEL[latestStatus] : "No status"}
               </Badge>
@@ -441,12 +448,82 @@ function OfferGroupCard({ group, formatDate, context }: OfferGroupCardProps) {
             ) : (
               <p className="text-sm">Offer details unavailable.</p>
             )}
+            {latestStatus === "rejected" && latestOffer.rejectionReason ? (
+              <p className="text-sm text-rose-500">
+                Decline reason: {latestOffer.rejectionReason}
+              </p>
+            ) : null}
           </div>
         ) : null}
       </CardHeader>
 
-      <CardContent className="py-6">
-        {/* Activity timeline removed */}
+      <CardContent className="space-y-5 py-6">
+        <div className="flex items-center justify-between text-sm text-secondary-content">
+          <span className="inline-flex items-center gap-2 font-medium text-primary-content">
+            <Inbox className="size-4 text-emerald-500" />
+            {historyLabel}
+          </span>
+          <span>
+            {group.offers.length} entr{group.offers.length === 1 ? "y" : "ies"}
+          </span>
+        </div>
+        <Separator className="bg-emerald-500/10" />
+
+        <div className="space-y-4">
+          {group.offers.map((offer) => {
+            const status = resolveStatus(offer);
+
+            return (
+              <div
+                key={offer.id}
+                className="rounded-2xl border border-emerald-500/10 bg-surface-tertiary/60 p-4 text-sm text-secondary-content shadow-sm"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center gap-2 text-primary-content">
+                    <Badge
+                      className={`px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[status]}`}
+                    >
+                      {STATUS_LABEL[status]}
+                    </Badge>
+                    <span>Created {formatDate(offer.createdAt)}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-3 text-xs text-secondary-content/80">
+                    <span>
+                      Expires {offer.expiry ? formatDate(offer.expiry) : "Open"}
+                    </span>
+                    <span>
+                      Accepted{" "}
+                      {offer.acceptedAt ? formatDate(offer.acceptedAt) : "—"}
+                    </span>
+                    <span>
+                      Declined{" "}
+                      {offer.rejectedAt ? formatDate(offer.rejectedAt) : "—"}
+                    </span>
+                  </div>
+                </div>
+                {offer.offeredItem ? (
+                  <div className="mt-3 rounded-lg border border-emerald-500/10 bg-surface/70 p-3">
+                    <p className="text-xs uppercase tracking-wide text-secondary-content/70">
+                      {offeredItemLabel}
+                    </p>
+                    <p className="mt-1 text-sm font-medium text-primary-content">
+                      {offer.offeredItem.title}
+                    </p>
+                    <p className="mt-1 text-sm leading-relaxed line-clamp-3">
+                      {offer.offeredItem.description ||
+                        "No description provided."}
+                    </p>
+                  </div>
+                ) : null}
+                {status === "rejected" && offer.rejectionReason ? (
+                  <p className="mt-3 text-sm text-rose-500">
+                    Decline reason: {offer.rejectionReason}
+                  </p>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
       </CardContent>
     </Card>
   );
