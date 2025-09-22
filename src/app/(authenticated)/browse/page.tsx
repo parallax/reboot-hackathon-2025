@@ -27,11 +27,19 @@ export default async function BrowsePage({ searchParams }: PageProps) {
   const filteredListings =
     selectedCategories.length === 0
       ? listings || []
-      : listings?.filter(
-          (listing) =>
+      : listings?.filter((listing) => {
+          // Check if any of the listing's tags match the selected categories
+          if (listing.tags && listing.tags.length > 0) {
+            return listing.tags.some((tag) =>
+              selectedCategories.includes(tag.id.toString())
+            );
+          }
+          // Fallback to the old single tag logic for compatibility
+          return (
             listing.tagId &&
             selectedCategories.includes(listing.tagId.toString())
-        ) || [];
+          );
+        }) || [];
 
   return (
     <BrowseItems

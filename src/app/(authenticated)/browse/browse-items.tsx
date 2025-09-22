@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { RefreshCcwDot } from "lucide-react";
 import { MultiSelect } from "@/components/ui/multi-select";
 import {
   Card,
@@ -25,6 +26,7 @@ interface Listing {
   userId: string;
   tagId: number | null;
   tagName: string | null;
+  tags: Tag[]; // Add the tags array
 }
 
 interface BrowseItemsProps {
@@ -113,10 +115,21 @@ export function BrowseItems({
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center">
-                <span className="bg-primary text-primary-foreground text-xs px-2 py-1 rounded">
-                  {listing.tagName || "Uncategorized"}
-                </span>
+              <div className="flex flex-wrap gap-2">
+                {listing.tags && listing.tags.length > 0 ? (
+                  listing.tags.map((tag) => (
+                    <span
+                      key={tag.id}
+                      className="bg-primary text-primary-foreground text-xs px-2 py-1 rounded"
+                    >
+                      {tag.name}
+                    </span>
+                  ))
+                ) : (
+                  <span className="bg-gray-500 text-white text-xs px-2 py-1 rounded">
+                    Uncategorized
+                  </span>
+                )}
               </div>
             </CardContent>
           </Card>
