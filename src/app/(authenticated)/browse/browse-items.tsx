@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { RefreshCcwDot } from "lucide-react";
 import { MultiSelect } from "@/components/ui/multi-select";
 import {
   Card,
@@ -12,25 +11,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import Link from "next/link";
-
-interface Tag {
-  id: number;
-  name: string;
-}
-
-interface Listing {
-  id: number;
-  title: string;
-  description: string;
-  imageUrl: string | null;
-  userId: string;
-  tagId: number | null;
-  tagName: string | null;
-  tags: Tag[]; // Add the tags array
-}
+import { Item, Tag } from "@/db/schema";
 
 interface BrowseItemsProps {
-  listings: Listing[];
+  listings: Item[];
   tags: Tag[];
   selectedCategories: string[];
 }
@@ -116,18 +100,18 @@ export function BrowseItems({
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
-                {listing.tags && listing.tags.length > 0 ? (
-                  listing.tags.map((tag) => (
+                {listing.itemTags && listing.itemTags.length > 0 ? (
+                  listing.itemTags.map((tag) => (
                     <span
-                      key={tag.id}
+                      key={tag.tag?.id || "uncategorised"}
                       className="bg-primary text-primary-foreground text-xs px-2 py-1 rounded"
                     >
-                      {tag.name}
+                      {tag.tag?.name || "Uncategorised"}
                     </span>
                   ))
                 ) : (
                   <span className="bg-gray-500 text-white text-xs px-2 py-1 rounded">
-                    Uncategorized
+                    Uncategorised
                   </span>
                 )}
               </div>
