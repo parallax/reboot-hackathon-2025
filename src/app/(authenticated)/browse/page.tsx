@@ -23,7 +23,7 @@ export default async function BrowsePage({
     selectedCategory === "all"
       ? listings || []
       : listings?.filter(
-          (listing) => listing.tagId?.toString() === selectedCategory
+          (listing) => listing.id?.toString() === selectedCategory
         ) || [];
   return (
     <BrowseItems

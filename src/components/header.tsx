@@ -1,5 +1,5 @@
 "use client";
-import { Search, Menu, RefreshCcwDot, Plus, UserIcon } from "lucide-react";
+import { Search, Menu, RefreshCcwDot, Plus } from "lucide-react";
 import Link from "next/link";
 
 import { DebugMenu } from "@/components/debug-menu";
@@ -75,15 +75,7 @@ export function Header({ debugEnabled = false }: HeaderProps) {
                     appearance={{
                       elements: { userButtonAvatarBox: "h-8 w-8" },
                     }}
-                  >
-                    <UserButton.MenuItems>
-                      <UserButton.Link
-                        label="Profile settings"
-                        href="/profile"
-                        labelIcon={<UserIcon className="h-4 w-4" />}
-                      />
-                    </UserButton.MenuItems>
-                  </UserButton>
+                  />
                 </SignedIn>
                 <SignedOut>
                   <SignInButton mode="redirect">
