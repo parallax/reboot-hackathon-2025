@@ -33,6 +33,7 @@ export type OfferEntry = Pick<
   "id" | "createdAt" | "expiry" | "acceptedAt" | "rejectedAt"
 > & {
   offeredItem: ItemSummary | null;
+  rejectionReason: OfferHistory["rejectReason"] | null;
 };
 
 export type OfferGroup = {
@@ -302,6 +303,11 @@ function OfferGroupCard({ group, formatDate, context }: OfferGroupCardProps) {
             ) : (
               <p className="text-sm">Offer details unavailable.</p>
             )}
+            {latestStatus === "rejected" && latestOffer.rejectionReason ? (
+              <p className="text-sm text-rose-500">
+                Decline reason: {latestOffer.rejectionReason}
+              </p>
+            ) : null}
           </div>
         ) : null}
       </CardHeader>
@@ -361,6 +367,11 @@ function OfferGroupCard({ group, formatDate, context }: OfferGroupCardProps) {
                         "No description provided."}
                     </p>
                   </div>
+                ) : null}
+                {status === "rejected" && offer.rejectionReason ? (
+                  <p className="mt-3 text-sm text-rose-500">
+                    Decline reason: {offer.rejectionReason}
+                  </p>
                 ) : null}
               </div>
             );

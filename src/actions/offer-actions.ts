@@ -1,10 +1,11 @@
 "use server";
 
 import { db } from "@/db";
-import { offers, offerHistory } from "@/db/schema";
+import { offers, offerHistory, items } from "@/db/schema";
 import { auth } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { sendOfferEmail } from "./send-offer-email";
 
 interface CreateOfferParams {
@@ -64,6 +65,71 @@ export async function createOffer({
   });
 
   redirect(`/offers`);
+}
+
+export async function respondToOffer({
+  offerHistoryId,
+  decision,
+  reason,
+}: {
+  offerHistoryId: number;
+  decision: "accept" | "reject";
+  reason?: string;
+}) {
+  const { userId } = await auth();
+
+  if (!userId) {
+    return { success: false, error: "User not authenticated" };
+  }
+
+  const [record] = await db
+    .select({
+      offerId: offerHistory.id,
+      itemId: offerHistory.itemId,
+      itemOwnerId: items.userId,
+    })
+    .from(offerHistory)
+    .innerJoin(items, eq(items.id, offerHistory.itemId))
+    .where(eq(offerHistory.id, offerHistoryId))
+    .limit(1);
+
+  if (!record) {
+    return { success: false, error: "Offer not found" };
+  }
+
+  if (record.itemOwnerId !== userId) {
+    return { success: false, error: "You are not authorised to respond to this offer" };
+  }
+
+  if (decision === "reject") {
+    const message = reason?.trim();
+    if (!message) {
+      return { success: false, error: "Decline reason is required" };
+    }
+
+    await db
+      .update(offerHistory)
+      .set({
+        acceptedAt: null,
+        rejectedAt: new Date(),
+        rejectReason: message,
+      })
+      .where(eq(offerHistory.id, offerHistoryId));
+  } else {
+    await db
+      .update(offerHistory)
+      .set({
+        acceptedAt: new Date(),
+        rejectedAt: null,
+        rejectReason: null,
+      })
+      .where(eq(offerHistory.id, offerHistoryId));
+  }
+
+  revalidatePath(`/offers/${record.itemId}`);
+  revalidatePath(`/offers`);
+
+  return { success: true as const };
 }
 
 export async function getOfferById(offerId: number) {

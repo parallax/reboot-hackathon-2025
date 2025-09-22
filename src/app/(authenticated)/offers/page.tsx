@@ -35,6 +35,7 @@ export default async function OffersPage() {
       expiry: offerHistory.expiry,
       acceptedAt: offerHistory.acceptedAt,
       rejectedAt: offerHistory.rejectedAt,
+      rejectReason: offerHistory.rejectReason,
     })
     .from(offerHistory)
     .innerJoin(items, eq(items.id, offerHistory.itemId))
@@ -60,6 +61,7 @@ export default async function OffersPage() {
           repeatable: row.offeredItemRepeatable ?? false,
         }
       : null,
+    rejectionReason: row.rejectReason ?? null,
   });
 
   for (const row of offerRows) {

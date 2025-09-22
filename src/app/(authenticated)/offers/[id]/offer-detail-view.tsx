@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState, type ComponentType } from "react";
+import { useEffect, useMemo, useState, useTransition, type ComponentType, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Clock,
@@ -22,6 +23,8 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
+import { respondToOffer } from "@/actions/offer-actions";
 
 type ItemSummary = {
   id: number;
@@ -37,12 +40,14 @@ type OfferEntry = {
   expiry: string | null;
   acceptedAt: string | null;
   rejectedAt: string | null;
+  rejectionReason: string | null;
   offeredItem: ItemSummary | null;
 };
 
 export type OfferDetailViewProps = {
   item: ItemSummary;
   offers: OfferEntry[];
+  viewerIsOwner: boolean;
 };
 
 type OfferStatus = "pending" | "accepted" | "rejected";
@@ -65,10 +70,30 @@ function resolveStatus(offer: OfferEntry): OfferStatus {
   return "pending";
 }
 
-export function OfferDetailView({ item, offers }: OfferDetailViewProps) {
+export function OfferDetailView({ item, offers, viewerIsOwner }: OfferDetailViewProps) {
   const [activeTab, setActiveTab] = useState<"recent" | "history">("recent");
 
   const latestOffer = useMemo(() => offers.at(0) ?? null, [offers]);
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [showDeclineForm, setShowDeclineForm] = useState(false);
+  const [declineReason, setDeclineReason] = useState("");
+  const [statusMessage, setStatusMessage] = useState<
+    { type: "success" | "error"; text: string } | null
+  >(null);
+
+  const respondableOffer = viewerIsOwner
+    ? offers.find((offer) => !offer.acceptedAt && !offer.rejectedAt)
+    : null;
+
+  useEffect(() => {
+    if (!respondableOffer) {
+      setShowDeclineForm(false);
+      setDeclineReason("");
+      setStatusMessage(null);
+    }
+  }, [respondableOffer]);
+
   const dateFormatter = useMemo(
     () =>
       new Intl.DateTimeFormat(undefined, {
@@ -80,6 +105,124 @@ export function OfferDetailView({ item, offers }: OfferDetailViewProps) {
 
   const formatDateTime = (value: string | null) =>
     value ? dateFormatter.format(new Date(value)) : "Not set";
+
+  const handleRespond = (decision: "accept" | "reject") => {
+    if (!respondableOffer) {
+      return;
+    }
+
+    setStatusMessage(null);
+
+    if (decision === "reject") {
+      const message = declineReason.trim();
+      if (!message) {
+        setStatusMessage({
+          type: "error",
+          text: "Please provide a reason for declining before submitting.",
+        });
+        return;
+      }
+    }
+
+    startTransition(async () => {
+      const result = await respondToOffer({
+        offerHistoryId: respondableOffer.id,
+        decision,
+        reason:
+          decision === "reject" ? declineReason.trim() : undefined,
+      });
+
+      if (!result.success) {
+        setStatusMessage({
+          type: "error",
+          text:
+            result.error ??
+            "Failed to update the offer. Please try again.",
+        });
+        return;
+      }
+
+      setStatusMessage({
+        type: "success",
+        text:
+          decision === "accept"
+            ? "Offer marked as accepted."
+            : "Offer declined.",
+      });
+
+      if (decision === "reject") {
+        setDeclineReason("");
+      }
+
+      setShowDeclineForm(false);
+      router.refresh();
+    });
+  };
+
+  const respondPanel = viewerIsOwner && respondableOffer ? (
+    <div className="mt-4 space-y-4 rounded-2xl border border-emerald-500/20 bg-surface/70 p-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-1">
+          <p className="text-sm font-semibold text-primary-content">
+            Respond to this offer
+          </p>
+          <p className="text-sm text-secondary-content">
+            Accept to move forward or decline with a brief explanation.
+          </p>
+        </div>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setStatusMessage(null);
+              setShowDeclineForm((prev) => !prev);
+            }}
+            disabled={isPending}
+          >
+            {showDeclineForm ? "Cancel decline" : "Decline with reason"}
+          </Button>
+          <Button
+            onClick={() => handleRespond("accept")}
+            disabled={isPending}
+            className="bg-emerald-600 text-white hover:bg-emerald-700"
+          >
+            {isPending ? "Saving..." : "Accept offer"}
+          </Button>
+        </div>
+      </div>
+      {statusMessage ? (
+        <p
+          className={`text-sm ${
+            statusMessage.type === "error"
+              ? "text-rose-500"
+              : "text-emerald-500"
+          }`}
+        >
+          {statusMessage.text}
+        </p>
+      ) : null}
+      {showDeclineForm ? (
+        <div className="space-y-3">
+          <Textarea
+            value={declineReason}
+            onChange={(event) => setDeclineReason(event.target.value)}
+            placeholder="Share a quick note about why you're declining..."
+            rows={4}
+          />
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <Button
+              variant="secondary"
+              className="bg-rose-500 text-white hover:bg-rose-600"
+              onClick={() => handleRespond("reject")}
+              disabled={isPending}
+            >
+              {isPending ? "Submitting..." : "Submit decline"}
+            </Button>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  ) : null;
 
   return (
     <div className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 overflow-hidden bg-surface px-4 pb-16 pt-10 sm:px-8">
@@ -161,6 +304,7 @@ export function OfferDetailView({ item, offers }: OfferDetailViewProps) {
             item={item}
             latestOffer={latestOffer}
             formatDateTime={formatDateTime}
+            respondSlot={respondPanel}
           />
         ) : (
           <OfferHistoryPanel
@@ -178,10 +322,12 @@ function LatestOfferPanel({
   item,
   latestOffer,
   formatDateTime,
+  respondSlot,
 }: {
   item: ItemSummary;
   latestOffer: OfferEntry | null;
   formatDateTime: (value: string | null) => string;
+  respondSlot?: ReactNode;
 }) {
   if (!latestOffer) {
     return (
@@ -243,6 +389,14 @@ function LatestOfferPanel({
             value={STATUS_COPY[status]}
           />
         </div>
+
+        {status === "rejected" && latestOffer.rejectionReason ? (
+          <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 p-4 text-sm text-rose-600">
+            Decline reason: {latestOffer.rejectionReason}
+          </div>
+        ) : null}
+
+        {respondSlot ? <div className="pt-2">{respondSlot}</div> : null}
       </CardContent>
     </Card>
   );
@@ -332,6 +486,12 @@ function OfferHistoryPanel({
                     {offer.rejectedAt ? formatDateTime(offer.rejectedAt) : "—"}
                   </span>
                 </div>
+
+                {status === "rejected" && offer.rejectionReason ? (
+                  <p className="text-sm text-rose-500">
+                    Decline reason: {offer.rejectionReason}
+                  </p>
+                ) : null}
               </CardContent>
             </Card>
           </div>

@@ -94,6 +94,7 @@ export default async function Page({ params }: OffersPageProps) {
       offeredImageUrl: offeredItems.imageUrl,
       offeredRepeatable: offeredItems.repeatable,
       offeredOwnerId: offeredItems.userId,
+      rejectReason: offerHistory.rejectReason,
     })
     .from(offerHistory)
     .leftJoin(offeredItems, eq(offeredItems.id, offerHistory.offeredItemId))
@@ -132,7 +133,9 @@ export default async function Page({ params }: OffersPageProps) {
             repeatable: offer.offeredRepeatable ?? false,
           }
         : null,
+      rejectionReason: offer.rejectReason ?? null,
     })),
+    viewerIsOwner: isListingOwner,
   };
 
   return <OfferDetailView {...payload} />;
