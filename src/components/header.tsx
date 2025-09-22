@@ -51,7 +51,7 @@ export function Header({ debugEnabled = false }: HeaderProps) {
                 <Button
                   variant="default"
                   size="sm"
-                  className="bg-primary hover:bg-emerald-700 text-white hidden sm:flex items-center gap-2"
+                  className="mr-2 bg-primary hover:bg-emerald-700 text-white hidden sm:flex items-center gap-2"
                 >
                   <Plus className="h-4 w-4" />
                   Create Listing
@@ -62,25 +62,35 @@ export function Header({ debugEnabled = false }: HeaderProps) {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="border border-emerald-600 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                  className="mr-2 border border-emerald-600 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
                 >
                   <Plus className="h-4 w-4" />
                 </Button>
               </Link>
 
               {/* Auth: Clerk user menu */}
-              <div className="ml-2">
+              <div className="ml-2 flex items-center">
                 <SignedIn>
-                  <UserButton userProfileUrl="/profile-setup" appearance={{ elements: { userButtonAvatarBox: "h-8 w-8" } }}>
+                  <UserButton
+                    userProfileUrl="/profile-setup"
+                    appearance={{
+                      elements: { userButtonAvatarBox: "h-8 w-8" },
+                    }}
+                  >
                     <UserButton.MenuItems>
-                      <UserButton.Link label="Profile settings" href="/profile-setup" />
+                      <UserButton.Link
+                        label="Profile settings"
+                        href="/profile-setup"
+                      />
                       <UserButton.Action label="Sign out" action="signOut" />
                     </UserButton.MenuItems>
                   </UserButton>
                 </SignedIn>
                 <SignedOut>
                   <SignInButton mode="redirect">
-                    <Button variant="outline" size="sm" className="ml-1">Sign in</Button>
+                    <Button variant="outline" size="sm" className="ml-1">
+                      Sign in
+                    </Button>
                   </SignInButton>
                 </SignedOut>
               </div>
