@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useTransition } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import {
@@ -30,7 +30,6 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { getItemById, getUserListings } from "@/lib/listings-actions";
-import { sendOfferEmail } from "@/actions/send-offer-email";
 import { createOffer } from "@/actions/offer-actions";
 
 interface ItemData {
@@ -64,7 +63,6 @@ export default function ItemPage() {
   const [showSuccessMessage, setShowSuccessMessage] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
-  const [isSubmittingOffer, setIsSubmittingOffer] = useState<boolean>(false);
 
   // Get item ID from URL params
   const itemId = parseInt(params.id as string);
@@ -117,7 +115,9 @@ export default function ItemPage() {
     }
   }, [itemId]);
 
-  const handleMakeOffer = async () => {
+  const [pending, startTransition] = useTransition();
+
+  const handleMakeOffer = () => {
     if (!item) {
       alert("Cannot make an offer on an item that doesn't exist");
       return;
@@ -132,55 +132,13 @@ export default function ItemPage() {
       alert("You must be logged in to make an offer");
       return;
     }
-
-    try {
-      setIsSubmittingOffer(true);
-
-      // First, create the offer in the database
-      const offerResult = await createOffer({
+    startTransition(async () => {
+      await createOffer({
         itemId: item.id,
         offeredItemId: parseInt(selectedItem),
         offererUserId: user.id,
-        expiryDays: 7, // Offer expires in 7 days
       });
-
-      if (!offerResult.success || !offerResult.data) {
-        alert(`Failed to create offer: ${offerResult.error}`);
-        return;
-      }
-
-      // Then send email notification to the item owner
-      const emailResult = await sendOfferEmail({
-        itemId: item.id,
-        offeredItemId: parseInt(selectedItem),
-        offerId: offerResult.data.offerId,
-        offererUserId: user.id,
-      });
-
-      if (emailResult.success) {
-        setShowSuccessMessage(true);
-        // Hide the success message after 5 seconds
-        setTimeout(() => {
-          setShowSuccessMessage(false);
-        }, 5000);
-      } else {
-        // Offer was created but email failed - still show success but warn about email
-        setShowSuccessMessage(true);
-        console.warn(
-          "Offer created but email notification failed:",
-          emailResult.error
-        );
-        // Hide the success message after 5 seconds
-        setTimeout(() => {
-          setShowSuccessMessage(false);
-        }, 5000);
-      }
-    } catch (error) {
-      console.error("Error making offer:", error);
-      alert("Failed to submit offer. Please try again.");
-    } finally {
-      setIsSubmittingOffer(false);
-    }
+    });
   };
 
   if (loading) {
@@ -327,7 +285,7 @@ export default function ItemPage() {
       {item.active && isCreator && (
         <Card className="bg-surface-secondary border-input mb-8">
           <CardHeader>
-            <CardTitle className="text-primary-content flex items-center gap-2">
+            <CardTitle className="text-primary-content flex items-center gap-2 pt-6">
               <Edit className="h-5 w-5 text-primary" />
               Manage Your Item
             </CardTitle>
@@ -349,15 +307,25 @@ export default function ItemPage() {
                 variant="outline"
                 className="flex-1"
                 onClick={async () => {
-                  const action = item.active ? "mark as unavailable" : "mark as available";
-                  if (confirm(`Are you sure you want to ${action}? This will ${item.active ? "hide" : "show"} it ${item.active ? "from" : "to"} other users.`)) {
+                  const action = item.active
+                    ? "mark as unavailable"
+                    : "mark as available";
+                  if (
+                    confirm(
+                      `Are you sure you want to ${action}? This will ${
+                        item.active ? "hide" : "show"
+                      } it ${item.active ? "from" : "to"} other users.`
+                    )
+                  ) {
                     try {
-                      const { updateItem } = await import("@/lib/listings-actions");
+                      const { updateItem } = await import(
+                        "@/lib/listings-actions"
+                      );
                       const result = await updateItem(item.id, {
                         title: item.title,
                         description: item.description,
                         imageUrl: item.imageUrl || "",
-                        tagIds: item.tags.map(tag => tag.id),
+                        tagIds: item.tags.map((tag) => tag.id),
                         repeatable: item.repeatable,
                         active: !item.active,
                       });
@@ -365,7 +333,10 @@ export default function ItemPage() {
                       if (result.success) {
                         window.location.reload();
                       } else {
-                        alert("Failed to update item status: " + (result.error || "Unknown error"));
+                        alert(
+                          "Failed to update item status: " +
+                            (result.error || "Unknown error")
+                        );
                       }
                     } catch (error) {
                       console.error("Error updating item status:", error);
@@ -397,7 +368,7 @@ export default function ItemPage() {
       {item.active && !isCreator && (
         <Card className="bg-surface-secondary border-input">
           <CardHeader>
-            <CardTitle className="text-primary-content flex items-center gap-2">
+            <CardTitle className="text-primary-content flex items-center gap-2 pt-6">
               <RefreshCcwDot className="h-5 w-5 text-primary" />
               Make an Offer
             </CardTitle>
@@ -444,11 +415,9 @@ export default function ItemPage() {
               <Button
                 className="flex-1"
                 onClick={handleMakeOffer}
-                disabled={
-                  !selectedItem || selectedItem === "none" || isSubmittingOffer
-                }
+                disabled={!selectedItem || selectedItem === "none" || pending}
               >
-                {isSubmittingOffer ? (
+                {pending ? (
                   <>
                     <RefreshCcwDot className="h-4 w-4 mr-2 animate-spin" />
                     Sending Offer...
@@ -486,7 +455,8 @@ export default function ItemPage() {
         <Card className="bg-orange-50 dark:bg-orange-900/30 border-orange-200 dark:border-orange-800">
           <CardContent className="p-6 text-center">
             <p className="text-orange-800 dark:text-orange-200">
-              Your item is currently marked as unavailable. You can reactivate it by editing the item.
+              Your item is currently marked as unavailable. You can reactivate
+              it by editing the item.
             </p>
             <Button
               className="mt-4"

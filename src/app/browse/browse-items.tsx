@@ -26,20 +26,21 @@ export function BrowseItems({
 }: BrowseItemsProps) {
   const router = useRouter();
 
-  const categories = [
-    { value: "all", label: "All Categories" },
-    ...tags.map((tag) => ({ value: String(tag.id), label: tag.name })),
-  ];
+  const categories = tags.map((tag) => ({
+    value: String(tag.id),
+    label: tag.name,
+  }));
+
+  // Debug logging
+  console.log("BrowseItems - selectedCategories:", selectedCategories);
+  console.log("BrowseItems - categories:", categories);
 
   const handleCategoriesChange = (values: string[]) => {
     // Update the URL with the selected categories
     const params = new URLSearchParams();
 
-    // If "all" is selected or no categories selected, don't add a parameter
-    const filteredValues = values.filter((v) => v !== "all");
-
-    if (filteredValues.length > 0) {
-      params.set("categories", filteredValues.join(","));
+    if (values.length > 0) {
+      params.set("categories", values.join(","));
     }
 
     // Navigate to the new URL which will trigger a server-side rerender
@@ -49,12 +50,9 @@ export function BrowseItems({
   return (
     <div className="flex flex-col bg-surface p-4">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-primary-content mb-2">
+        <h1 className="text-2xl font-bold text-primary-content">
           Browse Listings
         </h1>
-        <p className="text-muted-content">
-          Find what you need from local businesses
-        </p>
       </div>
 
       <div className="mb-6">
@@ -63,11 +61,9 @@ export function BrowseItems({
         </label>
         <MultiSelect
           options={categories}
-          defaultValue={
-            selectedCategories.length === 0 ? ["all"] : selectedCategories
-          }
+          value={selectedCategories}
           onValueChange={handleCategoriesChange}
-          placeholder="All Categories"
+          placeholder="Select categories"
         />
       </div>
 

@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db/index";
-import { Item, items, itemTags } from "@/db/schema";
+import { Item, items, itemTags, userTags } from "@/db/schema";
 import { auth } from "@clerk/nextjs/server";
 import { createClerkClient } from "@clerk/backend";
 import { revalidatePath } from "next/cache";
@@ -138,13 +138,53 @@ export async function getUserListings(userId?: string) {
   }
 }
 
+export async function getUserPreferredCategories(): Promise<string[]> {
+  try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return [];
+    }
+
+    // Get user's interests (tags where isOffer is false)
+    const userInterests = await db.query.userTags.findMany({
+      where: eq(userTags.userId, userId),
+      with: {
+        tag: true,
+      },
+    });
+
+    // Return tag IDs as strings for the interests (not offers)
+    return userInterests
+      .filter((userTag) => !userTag.isOffer)
+      .map((userTag) => String(userTag.tagId));
+  } catch (error) {
+    console.error("Error fetching user preferred categories:", error);
+    return [];
+  }
+}
+
 export async function getActiveListings({
   selectedCategories,
+  excludeCurrentUser = true,
 }: {
   selectedCategories: string[];
+  excludeCurrentUser?: boolean;
 }): Promise<Item[]> {
+  // Get current user ID if we need to exclude their items
+  let currentUserId: string | null = null;
+  if (excludeCurrentUser) {
+    try {
+      const { userId } = await auth();
+      currentUserId = userId;
+    } catch {
+      // If not authenticated, currentUserId remains null
+      console.log("User not authenticated, showing all listings");
+    }
+  }
+
   if (!selectedCategories || selectedCategories.length === 0) {
-    return await db.query.items.findMany({
+    const allItems = await db.query.items.findMany({
       with: {
         itemTags: {
           with: {
@@ -155,6 +195,13 @@ export async function getActiveListings({
       where: eq(items.active, true),
       orderBy: desc(items.id),
     });
+
+    // Filter out current user's items if needed
+    if (currentUserId) {
+      return allItems.filter((item) => item.userId !== currentUserId);
+    }
+
+    return allItems;
   }
 
   // Convert string category IDs to numbers
@@ -173,9 +220,16 @@ export async function getActiveListings({
   });
 
   // Filter items that have at least one matching tag
-  const filteredItems = itemsWithMatchingTags.filter((item) =>
+  let filteredItems = itemsWithMatchingTags.filter((item) =>
     item.itemTags?.some((itemTag) => categoryIds.includes(itemTag.tagId))
   );
+
+  // Filter out current user's items if needed
+  if (currentUserId) {
+    filteredItems = filteredItems.filter(
+      (item) => item.userId !== currentUserId
+    );
+  }
 
   return filteredItems;
 }
