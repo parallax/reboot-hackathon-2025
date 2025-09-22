@@ -156,7 +156,7 @@ export default function ItemPage() {
 
   if (error || !item) {
     return (
-      <div className="flex flex-col min-h-screen bg-surface p-4">
+      <div className="flex flex-col min-h-screen bg-surface py-4">
         <Button
           variant="outline"
           className="mb-6 w-fit"
@@ -182,7 +182,7 @@ export default function ItemPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-surface p-4">
+    <div className="flex flex-col min-h-screen bg-surface py-4">
       <Button
         variant="outline"
         className="mb-6 w-fit"
