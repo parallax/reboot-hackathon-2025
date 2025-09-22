@@ -3,13 +3,7 @@
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { RefreshCcwDot } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { MultiSelect } from "@/components/ui/multi-select";
 import {
   Card,
   CardContent,
@@ -37,13 +31,13 @@ interface Listing {
 interface BrowseItemsProps {
   listings: Listing[];
   tags: Tag[];
-  selectedCategory: string;
+  selectedCategories: string[];
 }
 
 export function BrowseItems({
   listings,
   tags,
-  selectedCategory,
+  selectedCategories,
 }: BrowseItemsProps) {
   const router = useRouter();
 
@@ -52,11 +46,15 @@ export function BrowseItems({
     ...tags.map((tag) => ({ value: String(tag.id), label: tag.name })),
   ];
 
-  const handleCategoryChange = (value: string) => {
-    // Update the URL with the selected category
+  const handleCategoriesChange = (values: string[]) => {
+    // Update the URL with the selected categories
     const params = new URLSearchParams();
-    if (value !== "all") {
-      params.set("category", value);
+
+    // If "all" is selected or no categories selected, don't add a parameter
+    const filteredValues = values.filter((v) => v !== "all");
+
+    if (filteredValues.length > 0) {
+      params.set("categories", filteredValues.join(","));
     }
 
     // Navigate to the new URL which will trigger a server-side rerender
@@ -78,18 +76,14 @@ export function BrowseItems({
         <label className="block text-sm font-medium text-secondary-content mb-2">
           Filter by category
         </label>
-        <Select value={selectedCategory} onValueChange={handleCategoryChange}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="All Categories" />
-          </SelectTrigger>
-          <SelectContent>
-            {categories.map((category) => (
-              <SelectItem key={category.value} value={category.value}>
-                {category.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <MultiSelect
+          options={categories}
+          defaultValue={
+            selectedCategories.length === 0 ? ["all"] : selectedCategories
+          }
+          onValueChange={handleCategoriesChange}
+          placeholder="All Categories"
+        />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

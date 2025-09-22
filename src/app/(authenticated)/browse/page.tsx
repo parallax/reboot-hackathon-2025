@@ -2,13 +2,18 @@ import { getActiveListings } from "@/lib/listings-actions";
 import { getTags } from "@/lib/tags-utils";
 import { BrowseItems } from "./browse-items";
 
-export default async function BrowsePage({
-  searchParams,
-}: {
-  searchParams: { category?: string };
-}) {
-  // Get category from searchParams or default to "all"
-  const selectedCategory = searchParams.category || "all";
+// Define the page props type
+type PageProps = {
+  searchParams: {
+    categories?: string;
+  };
+};
+
+export default async function BrowsePage({ searchParams }: PageProps) {
+  // Get categories from searchParams
+  const selectedCategories = searchParams.categories
+    ? searchParams.categories.split(",")
+    : [];
 
   // Fetch data
   const [listingsResult, tags] = await Promise.all([
@@ -18,18 +23,21 @@ export default async function BrowsePage({
 
   const listings = listingsResult.success ? listingsResult.data : [];
 
-  // Filter listings server-side based on the category
+  // Filter listings server-side based on the selected categories
   const filteredListings =
-    selectedCategory === "all"
+    selectedCategories.length === 0
       ? listings || []
       : listings?.filter(
-          (listing) => listing.tagId?.toString() === selectedCategory
+          (listing) =>
+            listing.tagId &&
+            selectedCategories.includes(listing.tagId.toString())
         ) || [];
+
   return (
     <BrowseItems
       listings={filteredListings}
       tags={tags}
-      selectedCategory={selectedCategory}
+      selectedCategories={selectedCategories}
     />
   );
 }
