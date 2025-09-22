@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { RefreshCcwDot } from "lucide-react";
 import {
   Select,
@@ -24,35 +25,40 @@ const mockListings = [
     title: "Web Design Services",
     description: "Professional web design and development services for small businesses",
     category: "design",
-    userId: "user1"
+    userId: "user1",
+    imageUrl: "/replace-this.jpg"
   },
   {
     id: 2,
     title: "Marketing Consultation",
     description: "Expert marketing advice for startups and growing businesses",
     category: "marketing",
-    userId: "user2"
+    userId: "user2",
+    imageUrl: "/replace-this.jpg"
   },
   {
     id: 3,
     title: "Office Space",
     description: "Shared office space available for freelancers and small teams",
     category: "workspace",
-    userId: "user3"
+    userId: "user3",
+    imageUrl: "/replace-this.jpg"
   },
   {
     id: 4,
     title: "Software Development",
     description: "Full-stack development services for web and mobile applications",
     category: "development",
-    userId: "user4"
+    userId: "user4",
+    imageUrl: "/replace-this.jpg"
   },
   {
     id: 5,
     title: "Business Consulting",
     description: "Strategic business consulting for growth and optimization",
     category: "consulting",
-    userId: "user5"
+    userId: "user5",
+    imageUrl: "/replace-this.jpg"
   }
 ];
 
@@ -63,14 +69,16 @@ const mockRecommendedOffers = [
     title: "Web Design Services",
     description: "Professional web design and development services for small businesses",
     category: "design",
-    userId: "user1"
+    userId: "user1",
+    imageUrl: "/replace-this.jpg"
   },
   {
     id: 4,
     title: "Software Development",
     description: "Full-stack development services for web and mobile applications",
     category: "development",
-    userId: "user4"
+    userId: "user4",
+    imageUrl: "/replace-this.jpg"
   }
 ];
 
@@ -87,7 +95,6 @@ const categories = [
 export default function BrowseListingsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
-  // Filter listings based on selected category
   const filteredListings = selectedCategory === "all"
     ? mockListings
     : mockListings.filter(listing => listing.category === selectedCategory);
@@ -108,9 +115,17 @@ export default function BrowseListingsPage() {
       <div className="mb-8">
         <h2 className="text-xl font-bold text-primary-content mb-4">Recommended Offers</h2>
         {mockRecommendedOffers.length > 0 ? (
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {mockRecommendedOffers.map((offer) => (
               <Card key={offer.id} className="bg-surface-secondary border-input">
+                <div className="relative h-48 w-full">
+                  <Image
+                    src={offer.imageUrl}
+                    alt={offer.title}
+                    fill
+                    className="object-cover rounded-t-lg"
+                  />
+                </div>
                 <CardHeader>
                   <CardTitle className="text-primary-content">{offer.title}</CardTitle>
                   <CardDescription className="text-secondary-content">
@@ -152,9 +167,17 @@ export default function BrowseListingsPage() {
       </div>
 
       {/* Listings */}
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredListings.map((listing) => (
           <Card key={listing.id} className="bg-surface-secondary border-input">
+            <div className="relative h-48 w-full">
+              <Image
+                src={listing.imageUrl}
+                alt={listing.title}
+                fill
+                className="object-cover rounded-t-lg"
+              />
+            </div>
             <CardHeader>
               <CardTitle className="text-primary-content">{listing.title}</CardTitle>
               <CardDescription className="text-secondary-content">
