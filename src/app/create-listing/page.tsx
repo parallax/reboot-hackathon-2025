@@ -171,9 +171,9 @@ export default function CreateListingPage() {
       // Move to complete stage
       setStage("complete");
 
-      // After 2 seconds, redirect to the home page
+      // After 2 seconds, redirect to the created item page
       setTimeout(() => {
-        window.location.href = '/listings/' + result.data!.id;
+        window.location.href = '/items/' + result.data!.id + '?new=true';
       }, 2000);
 
     } catch (error) {
