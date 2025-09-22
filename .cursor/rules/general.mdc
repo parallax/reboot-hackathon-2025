@@ -1,0 +1,9 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+
+Use the ShadCN MCP server to check the Cognite registry for components you could use before making your own. If there are Cognite components available for what you are trying to do you must always use them over alternatives. We want to make sure our app aligns with the Cognite design system. If there are no Cognite components you can fallback to the default ShadCN ones just make sure they align with the consistent style of the Cognite ones.
+
+Make sure to check the globals.css file for styling.
