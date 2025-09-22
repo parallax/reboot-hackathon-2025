@@ -6,11 +6,7 @@ import { createClerkClient } from "@clerk/backend";
 
 import { db } from "@/db";
 import { items, offerHistory } from "@/db/schema";
-import {
-  AllOffersView,
-  type OfferGroup,
-  type ItemSummary,
-} from "./all-offers-view";
+import { AllOffersView, type OfferGroup } from "./all-offers-view";
 
 export default async function OffersPage() {
   const { userId } = await auth();
@@ -88,8 +84,12 @@ export default async function OffersPage() {
           repeatable: row.offeredItemRepeatable ?? false,
         }
       : null,
-    offererName: row.offeredItemOwnerId ? userNames.get(row.offeredItemOwnerId) : undefined,
-    targetUserName: row.itemOwnerId ? userNames.get(row.itemOwnerId) : undefined,
+    offererName: row.offeredItemOwnerId
+      ? userNames.get(row.offeredItemOwnerId)
+      : undefined,
+    targetUserName: row.itemOwnerId
+      ? userNames.get(row.itemOwnerId)
+      : undefined,
   });
 
   const receivedMap = new Map<number, OfferGroup>();
