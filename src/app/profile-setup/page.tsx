@@ -49,7 +49,7 @@ export default async function ProfileSetupPage() {
   const location = userRecord[0]?.location ?? "";
 
   return (
-    <div className="flex flex-col min-h-screen bg-surface p-4">
+    <div className="flex flex-col bg-surface p-4">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-primary-content mb-2">
           Profile Setup
