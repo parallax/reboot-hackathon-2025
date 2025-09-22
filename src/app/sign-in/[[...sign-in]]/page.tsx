@@ -3,7 +3,7 @@ import { SignIn } from "@clerk/nextjs";
 export default function Page() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary/5 to-accent/5 flex items-start justify-center pt-20 p-4">
-      <div className="w-full max-w-md ml-[6%]">
+      <div className="w-full max-w-md ml-[2%]">
         <SignIn
           appearance={{
             elements: {
