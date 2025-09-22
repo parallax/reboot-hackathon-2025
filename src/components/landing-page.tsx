@@ -24,13 +24,17 @@ export function LandingPage() {
 
         {/* Buttons */}
         <div className="flex flex-col space-y-4 w-full">
-          <LinkButton href="/browse" variant="default" size="lg">
-            I need
-          </LinkButton>
+          <Link href="/browse" passHref>
+            <Button className="w-full py-6 body-large" variant="default">
+              I'm looking for something
+            </Button>
+          </Link>
 
-          <LinkButton href="/browse" variant="outline" size="lg">
-            I want
-          </LinkButton>
+          <Link href="/create-listing" passHref>
+            <Button className="w-full py-6 body-large" variant="default">
+              I have something to offer
+            </Button>
+          </Link>
         </div>
       </div>
     </div>
