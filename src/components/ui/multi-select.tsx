@@ -128,6 +128,11 @@ interface MultiSelectProps
   defaultValue?: string[];
 
   /**
+   * The controlled selected values. When provided, the component becomes controlled.
+   */
+  value?: string[];
+
+  /**
    * Placeholder text to be displayed when no values are selected.
    * Optional, defaults to "Select options".
    */
@@ -311,6 +316,7 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
       onValueChange,
       variant,
       defaultValue = [],
+      value,
       placeholder = "Select options",
       animation = 0,
       animationConfig,
@@ -335,11 +341,18 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
     },
     ref
   ) => {
-    const [selectedValues, setSelectedValues] =
-      React.useState<string[]>(defaultValue);
+    const isControlled = value !== undefined;
+    const [selectedValues, setSelectedValues] = React.useState<string[]>(
+      isControlled ? value : defaultValue
+    );
     const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
     const [isAnimating, setIsAnimating] = React.useState(false);
     const [searchValue, setSearchValue] = React.useState("");
+
+    console.log('MultiSelect - isControlled:', isControlled);
+    console.log('MultiSelect - value:', value);
+    console.log('MultiSelect - defaultValue:', defaultValue);
+    console.log('MultiSelect - selectedValues after init:', selectedValues);
 
     const [politeMessage, setPoliteMessage] = React.useState("");
     const [assertiveMessage, setAssertiveMessage] = React.useState("");
@@ -387,11 +400,13 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
     );
 
     const resetToDefault = React.useCallback(() => {
-      setSelectedValues(defaultValue);
+      const resetValue = isControlled ? value : defaultValue;
+      console.log('MultiSelect - resetToDefault called, setting selectedValues to:', resetValue);
+      setSelectedValues(resetValue);
       setIsPopoverOpen(false);
       setSearchValue("");
-      onValueChange(defaultValue);
-    }, [defaultValue, onValueChange]);
+      onValueChange(resetValue);
+    }, [isControlled, defaultValue, value, onValueChange]);
 
     const buttonRef = React.useRef<HTMLButtonElement>(null);
 
@@ -401,12 +416,16 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
         reset: resetToDefault,
         getSelectedValues: () => selectedValues,
         setSelectedValues: (values: string[]) => {
-          setSelectedValues(values);
-          onValueChange(values);
+          if (!isControlled) {
+            setSelectedValues(values);
+            onValueChange(values);
+          }
         },
         clear: () => {
-          setSelectedValues([]);
-          onValueChange([]);
+          if (!isControlled) {
+            setSelectedValues([]);
+            onValueChange([]);
+          }
         },
         focus: () => {
           if (buttonRef.current) {
@@ -618,7 +637,7 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
     };
 
     const toggleOption = (optionValue: string) => {
-      if (disabled) return;
+      if (disabled || isControlled) return;
       const option = getOptionByValue(optionValue);
       if (option?.disabled) return;
       const newSelectedValues = selectedValues.includes(optionValue)
@@ -632,7 +651,7 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
     };
 
     const handleClear = () => {
-      if (disabled) return;
+      if (disabled || isControlled) return;
       setSelectedValues([]);
       onValueChange([]);
     };
@@ -669,15 +688,30 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
     };
 
     React.useEffect(() => {
-      if (!resetOnDefaultValueChange) return;
+      if (isControlled) {
+        console.log('MultiSelect - controlled mode, syncing selectedValues with value:', value);
+        setSelectedValues(value);
+      } else if (!resetOnDefaultValueChange) {
+        return;
+      }
       const prevDefaultValue = prevDefaultValueRef.current;
-      if (!arraysEqual(prevDefaultValue, defaultValue)) {
+      console.log('MultiSelect - useEffect check:', {
+        isControlled,
+        prevDefaultValue,
+        defaultValue,
+        value,
+        selectedValues,
+        arraysEqualPrev: arraysEqual(prevDefaultValue, defaultValue),
+        arraysEqualCurrent: arraysEqual(selectedValues, defaultValue)
+      });
+      if (!isControlled && !arraysEqual(prevDefaultValue, defaultValue)) {
         if (!arraysEqual(selectedValues, defaultValue)) {
+          console.log('MultiSelect - resetting selectedValues to defaultValue');
           setSelectedValues(defaultValue);
         }
         prevDefaultValueRef.current = [...defaultValue];
       }
-    }, [defaultValue, selectedValues, arraysEqual, resetOnDefaultValueChange]);
+    }, [isControlled, defaultValue, value, selectedValues, arraysEqual, resetOnDefaultValueChange]);
 
     const getWidthConstraints = () => {
       const defaultMinWidth = screenSize === "mobile" ? "0px" : "200px";
