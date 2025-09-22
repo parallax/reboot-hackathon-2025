@@ -57,7 +57,7 @@ export default function ProfileSetupPage() {
 
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-primary-content mb-2">Profile Setup</h1>
-        <p className="text-muted-content">Tell us what you're interested in and what you can offer</p>
+        <p className="text-muted-content">Tell us what you&apos;re interested in and what you can offer</p>
       </div>
 
       {/* Location Input */}
@@ -76,7 +76,7 @@ export default function ProfileSetupPage() {
 
       {/* Interested In Section */}
       <div className="mb-8">
-        <h2 className="text-lg font-semibold text-primary-content mb-4">I'm interested in</h2>
+        <h2 className="text-lg font-semibold text-primary-content mb-4">I&apos;m interested in</h2>
         <div className="space-y-3">
           {mockTags.map((tag) => (
             <div key={`interested-${tag.id}`} className="flex items-center space-x-3">
