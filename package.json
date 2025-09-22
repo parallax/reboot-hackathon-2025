@@ -10,7 +10,8 @@
     "db:generate": "drizzle-kit generate:pg",
     "db:migrate": "drizzle-kit migrate:pg",
     "db:push": "drizzle-kit push",
-    "seed:tags": "bun run scripts/seed-tags.ts"
+    "seed:tags": "bun run scripts/seed-tags.ts",
+    "seed:items": "bun run scripts/seed-items.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.32",
