@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db/index";
-import { Item, items, itemTags } from "@/db/schema";
+import { Item, items, itemTags, userTags } from "@/db/schema";
 import { auth } from "@clerk/nextjs/server";
 import { createClerkClient } from "@clerk/backend";
 import { revalidatePath } from "next/cache";
@@ -127,6 +127,32 @@ export async function getUserListings(userId?: string) {
       success: false,
       error: "Failed to fetch listings",
     };
+  }
+}
+
+export async function getUserPreferredCategories(): Promise<string[]> {
+  try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return [];
+    }
+
+    // Get user's interests (tags where isOffer is false)
+    const userInterests = await db.query.userTags.findMany({
+      where: eq(userTags.userId, userId),
+      with: {
+        tag: true,
+      },
+    });
+
+    // Return tag IDs as strings for the interests (not offers)
+    return userInterests
+      .filter((userTag) => !userTag.isOffer)
+      .map((userTag) => String(userTag.tagId));
+  } catch (error) {
+    console.error("Error fetching user preferred categories:", error);
+    return [];
   }
 }
 
