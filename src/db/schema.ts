@@ -7,6 +7,7 @@ import {
   boolean,
   timestamp,
   primaryKey,
+  vector,
 } from "drizzle-orm/pg-core";
 
 // Tags table
@@ -50,6 +51,7 @@ export const items = pgTable("items", {
   title: text("title").notNull(),
   description: text("description").notNull(),
   repeatable: boolean("repeatable").notNull(),
+  embedding: vector({ dimensions: 1536 }),
 });
 
 // Item tags table (many-to-many relationship)

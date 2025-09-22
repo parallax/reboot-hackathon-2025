@@ -6,6 +6,8 @@ import { auth } from "@clerk/nextjs/server";
 import { createClerkClient } from "@clerk/backend";
 import { revalidatePath } from "next/cache";
 import { eq, desc } from "drizzle-orm";
+import { embed } from 'ai'
+import { openai } from '@ai-sdk/openai'
 
 export async function createListing(formData: {
   title: string;
@@ -47,6 +49,11 @@ export async function createListing(formData: {
       };
     }
 
+    const { embedding } = await embed({
+      model: openai.embedding('text-embedding-3-small'),
+      value: formData.title.trim() + " " + formData.description.trim() + " " + formData.tagIds.join(" "),
+    })
+
     // Create the listing in the database
     const [newItem] = await db
       .insert(items)
@@ -57,6 +64,7 @@ export async function createListing(formData: {
         imageUrl: formData.imageUrl || null,
         repeatable: formData.repeatable,
         active: true, // New listings are active by default
+        embedding: embedding,
       })
       .returning();
 
@@ -158,11 +166,25 @@ export async function getUserPreferredCategories(): Promise<string[]> {
 
 export async function getActiveListings({
   selectedCategories,
+  excludeCurrentUser = true,
 }: {
   selectedCategories: string[];
+  excludeCurrentUser?: boolean;
 }): Promise<Item[]> {
+  // Get current user ID if we need to exclude their items
+  let currentUserId: string | null = null;
+  if (excludeCurrentUser) {
+    try {
+      const { userId } = await auth();
+      currentUserId = userId;
+    } catch {
+      // If not authenticated, currentUserId remains null
+      console.log("User not authenticated, showing all listings");
+    }
+  }
+
   if (!selectedCategories || selectedCategories.length === 0) {
-    return await db.query.items.findMany({
+    const allItems = await db.query.items.findMany({
       with: {
         itemTags: {
           with: {
@@ -173,6 +195,13 @@ export async function getActiveListings({
       where: eq(items.active, true),
       orderBy: desc(items.id),
     });
+
+    // Filter out current user's items if needed
+    if (currentUserId) {
+      return allItems.filter((item) => item.userId !== currentUserId);
+    }
+
+    return allItems;
   }
 
   // Convert string category IDs to numbers
@@ -191,9 +220,16 @@ export async function getActiveListings({
   });
 
   // Filter items that have at least one matching tag
-  const filteredItems = itemsWithMatchingTags.filter((item) =>
+  let filteredItems = itemsWithMatchingTags.filter((item) =>
     item.itemTags?.some((itemTag) => categoryIds.includes(itemTag.tagId))
   );
+
+  // Filter out current user's items if needed
+  if (currentUserId) {
+    filteredItems = filteredItems.filter(
+      (item) => item.userId !== currentUserId
+    );
+  }
 
   return filteredItems;
 }
@@ -337,6 +373,11 @@ export async function updateItem(
       };
     }
 
+    const { embedding } = await embed({
+      model: openai.embedding('text-embedding-3-small'),
+      value: formData.title.trim() + " " + formData.description.trim() + " " + formData.tagIds.join(" "),
+    })
+
     // Update the item in the database
     const [updatedItem] = await db
       .update(items)
@@ -346,6 +387,7 @@ export async function updateItem(
         imageUrl: formData.imageUrl || null,
         repeatable: formData.repeatable,
         active: formData.active,
+        embedding: embedding,
       })
       .where(eq(items.id, itemId))
       .returning();

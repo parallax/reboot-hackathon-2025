@@ -46,19 +46,18 @@ export type OfferGroup = {
 
 type OfferStatus = "pending" | "accepted" | "rejected";
 
+type OfferContext = "received" | "sent";
+
 const STATUS_LABEL: Record<OfferStatus, string> = {
-  pending: "Awaiting your response",
+  pending: "Awaiting response",
   accepted: "Accepted",
   rejected: "Declined",
 };
 
 const STATUS_BADGE: Record<OfferStatus, string> = {
-  pending:
-    "bg-amber-200/70 text-amber-900 dark:bg-amber-400/15 dark:text-amber-200",
-  accepted:
-    "bg-emerald-200/70 text-emerald-900 dark:bg-emerald-500/15 dark:text-emerald-300",
-  rejected:
-    "bg-rose-200/70 text-rose-900 dark:bg-rose-500/15 dark:text-rose-300",
+  pending: "bg-amber-200/70 text-amber-900 dark:bg-amber-400/15 dark:text-amber-200",
+  accepted: "bg-emerald-200/70 text-emerald-900 dark:bg-emerald-500/15 dark:text-emerald-300",
+  rejected: "bg-rose-200/70 text-rose-900 dark:bg-rose-500/15 dark:text-rose-300",
 };
 
 function resolveStatus(offer: OfferEntry): OfferStatus {
@@ -68,10 +67,11 @@ function resolveStatus(offer: OfferEntry): OfferStatus {
 }
 
 type AllOffersViewProps = {
-  groups: OfferGroup[];
+  received: OfferGroup[];
+  sent: OfferGroup[];
 };
 
-export function AllOffersView({ groups }: AllOffersViewProps) {
+export function AllOffersView({ received, sent }: AllOffersViewProps) {
   const dateFormatter = useMemo(
     () =>
       new Intl.DateTimeFormat(undefined, {
@@ -83,6 +83,9 @@ export function AllOffersView({ groups }: AllOffersViewProps) {
 
   const formatDate = (value: string | null) =>
     value ? dateFormatter.format(new Date(value)) : "Not set";
+
+  const hasReceived = received.length > 0;
+  const hasSent = sent.length > 0;
 
   return (
     <div className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 bg-surface px-4 pb-20 pt-10 sm:px-8">
@@ -100,7 +103,7 @@ export function AllOffersView({ groups }: AllOffersViewProps) {
           <div className="flex items-center gap-3 text-secondary-content">
             <ShieldCheck className="size-5 text-emerald-500" />
             <span className="text-sm font-medium">
-              Offers made on your active listings
+              Track every exchange you receive and send
             </span>
           </div>
           <Button asChild variant="outline" className="w-full sm:w-auto">
@@ -119,39 +122,102 @@ export function AllOffersView({ groups }: AllOffersViewProps) {
               All offers at a glance
             </h1>
             <p className="mt-2 max-w-3xl text-secondary-content">
-              Stay on top of every swap proposal in one place. Review the latest
-              activity, then drill into a specific listing when you need more
-              detail.
+              See new swap proposals on your listings and keep tabs on the
+              offers you have in play elsewhere.
             </p>
           </div>
         </div>
       </header>
 
-      {groups.length === 0 ? (
+      {!hasReceived && !hasSent ? (
         <EmptyState />
       ) : (
-        <div className="relative z-10 grid grid-cols-1 gap-5">
-          {groups.map((group) => (
-            <OfferGroupCard
-              key={group.item.id}
-              group={group}
-              formatDate={formatDate}
-            />
-          ))}
+        <div className="relative z-10 flex flex-col gap-12">
+          <OfferSection
+            title="Offers on your listings"
+            description="Incoming swaps for items you own."
+            groups={received}
+            formatDate={formatDate}
+            context="received"
+          />
+
+          <OfferSection
+            title="Offers you have sent"
+            description="Follow up on proposals you've made to other members."
+            groups={sent}
+            formatDate={formatDate}
+            context="sent"
+          />
         </div>
       )}
     </div>
   );
 }
 
+type OfferSectionProps = {
+  title: string;
+  description: string;
+  groups: OfferGroup[];
+  formatDate: (value: string | null) => string;
+  context: OfferContext;
+};
+
+function OfferSection({
+  title,
+  description,
+  groups,
+  formatDate,
+  context,
+}: OfferSectionProps) {
+  return (
+    <section className="space-y-5">
+      <div className="flex flex-col gap-1">
+        <h2 className="text-2xl font-semibold text-primary-content">{title}</h2>
+        <p className="text-sm text-secondary-content">{description}</p>
+      </div>
+
+      {groups.length === 0 ? (
+        <SectionPlaceholder context={context} />
+      ) : (
+        <div className="grid grid-cols-1 gap-5">
+          {groups.map((group) => (
+            <OfferGroupCard
+              key={`${context}-${group.item.id}`}
+              group={group}
+              formatDate={formatDate}
+              context={context}
+            />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 type OfferGroupCardProps = {
   group: OfferGroup;
   formatDate: (value: string | null) => string;
+  context: OfferContext;
 };
 
-function OfferGroupCard({ group, formatDate }: OfferGroupCardProps) {
+function OfferGroupCard({ group, formatDate, context }: OfferGroupCardProps) {
   const latestOffer = group.offers[0] ?? null;
   const latestStatus = latestOffer ? resolveStatus(latestOffer) : null;
+
+  const headerBadgeLabel =
+    context === "received" ? "Your listing" : "Offer sent";
+  const headerButtonLabel =
+    context === "received" ? "Review details" : "View listing";
+  const headerButtonHref =
+    context === "received" ? `/offers/${group.item.id}` : `/items/${group.item.id}`;
+  const historyLabel =
+    context === "received" ? "Offer history" : "Activity timeline";
+  const latestSummaryLabel =
+    context === "received"
+      ? "Latest offer summary"
+      : "Latest update on your offer";
+  const offeredItemLabel =
+    context === "received" ? "Offered item" : "What you offered";
 
   return (
     <Card className="relative overflow-hidden border border-emerald-500/10 bg-surface-secondary/80 shadow-lg">
@@ -174,26 +240,26 @@ function OfferGroupCard({ group, formatDate }: OfferGroupCardProps) {
             </div>
             <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-3">
-                <CardTitle className="text-2xl text-primary-content">
-                  {group.item.title}
-                </CardTitle>
+                <Badge variant="outline" className="border-emerald-400/40 bg-emerald-400/10 text-emerald-600">
+                  {headerBadgeLabel}
+                </Badge>
                 {group.item.repeatable ? (
-                  <Badge
-                    variant="outline"
-                    className="border-emerald-400/40 bg-emerald-400/10 text-emerald-600"
-                  >
+                  <Badge variant="outline" className="border-emerald-400/40 bg-emerald-400/10 text-emerald-600">
                     Repeatable
                   </Badge>
                 ) : null}
               </div>
+              <CardTitle className="text-2xl text-primary-content">
+                {group.item.title}
+              </CardTitle>
               <CardDescription className="max-w-2xl text-secondary-content">
                 {group.item.description}
               </CardDescription>
             </div>
           </div>
           <Button asChild variant="secondary" className="w-full sm:w-auto">
-            <Link href={`/offer/${group.item.id}`}>
-              Review details
+            <Link href={headerButtonHref}>
+              {headerButtonLabel}
               <ArrowRight className="ml-2 size-4" />
             </Link>
           </Button>
@@ -201,12 +267,11 @@ function OfferGroupCard({ group, formatDate }: OfferGroupCardProps) {
 
         {latestOffer ? (
           <div className="flex flex-col gap-2 rounded-2xl border border-emerald-500/15 bg-surface-tertiary/60 p-4 text-sm text-secondary-content">
+            <span className="text-xs font-semibold uppercase tracking-wide text-secondary-content/70">
+              {latestSummaryLabel}
+            </span>
             <div className="flex flex-wrap items-center gap-3 text-primary-content">
-              <Badge
-                className={`px-3 py-1 text-xs font-medium ${
-                  latestStatus ? STATUS_BADGE[latestStatus] : ""
-                }`}
-              >
+              <Badge className={`px-3 py-1 text-xs font-medium ${latestStatus ? STATUS_BADGE[latestStatus] : ""}`}>
                 {latestStatus ? STATUS_LABEL[latestStatus] : "No status"}
               </Badge>
               <span className="inline-flex items-center gap-2">
@@ -214,15 +279,13 @@ function OfferGroupCard({ group, formatDate }: OfferGroupCardProps) {
                 Logged {formatDate(latestOffer.createdAt)}
               </span>
               <span className="inline-flex items-center gap-2 text-secondary-content/80">
-                Expires{" "}
-                {latestOffer.expiry
-                  ? formatDate(latestOffer.expiry)
-                  : "Open offer"}
+                Expires {latestOffer.expiry ? formatDate(latestOffer.expiry) : "Open offer"}
               </span>
             </div>
             {latestOffer.offeredItem ? (
               <p className="text-sm">
-                Swapped for <strong>{latestOffer.offeredItem.title}</strong>
+                {context === "received" ? "Swapped for " : "You offered "}
+                <strong>{latestOffer.offeredItem.title}</strong>
               </p>
             ) : (
               <p className="text-sm">Offer details unavailable.</p>
@@ -235,11 +298,9 @@ function OfferGroupCard({ group, formatDate }: OfferGroupCardProps) {
         <div className="flex items-center justify-between text-sm text-secondary-content">
           <span className="inline-flex items-center gap-2 font-medium text-primary-content">
             <Inbox className="size-4 text-emerald-500" />
-            Offer history
+            {historyLabel}
           </span>
-          <span>
-            {group.offers.length} entr{group.offers.length === 1 ? "y" : "ies"}
-          </span>
+          <span>{group.offers.length} entr{group.offers.length === 1 ? "y" : "ies"}</span>
         </div>
         <Separator className="bg-emerald-500/10" />
 
@@ -254,9 +315,7 @@ function OfferGroupCard({ group, formatDate }: OfferGroupCardProps) {
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-2 text-primary-content">
-                    <Badge
-                      className={`px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[status]}`}
-                    >
+                    <Badge className={`px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[status]}`}>
                       {STATUS_LABEL[status]}
                     </Badge>
                     <span>Created {formatDate(offer.createdAt)}</span>
@@ -266,26 +325,23 @@ function OfferGroupCard({ group, formatDate }: OfferGroupCardProps) {
                       Expires {offer.expiry ? formatDate(offer.expiry) : "Open"}
                     </span>
                     <span>
-                      Accepted{" "}
-                      {offer.acceptedAt ? formatDate(offer.acceptedAt) : "—"}
+                      Accepted {offer.acceptedAt ? formatDate(offer.acceptedAt) : "—"}
                     </span>
                     <span>
-                      Declined{" "}
-                      {offer.rejectedAt ? formatDate(offer.rejectedAt) : "—"}
+                      Declined {offer.rejectedAt ? formatDate(offer.rejectedAt) : "—"}
                     </span>
                   </div>
                 </div>
                 {offer.offeredItem ? (
                   <div className="mt-3 rounded-lg border border-emerald-500/10 bg-surface/70 p-3">
                     <p className="text-xs uppercase tracking-wide text-secondary-content/70">
-                      Offered item
+                      {offeredItemLabel}
                     </p>
                     <p className="mt-1 text-sm font-medium text-primary-content">
                       {offer.offeredItem.title}
                     </p>
                     <p className="mt-1 text-sm leading-relaxed line-clamp-3">
-                      {offer.offeredItem.description ||
-                        "No description provided."}
+                      {offer.offeredItem.description || "No description provided."}
                     </p>
                   </div>
                 ) : null}
@@ -298,6 +354,38 @@ function OfferGroupCard({ group, formatDate }: OfferGroupCardProps) {
   );
 }
 
+type SectionPlaceholderProps = {
+  context: OfferContext;
+};
+
+function SectionPlaceholder({ context }: SectionPlaceholderProps) {
+  if (context === "received") {
+    return (
+      <div className="rounded-3xl border border-dashed border-emerald-500/30 bg-surface-secondary/50 p-8 text-secondary-content">
+        <h3 className="text-lg font-semibold text-primary-content">
+          No offers on your listings yet
+        </h3>
+        <p className="mt-2 text-sm leading-relaxed">
+          Share more items or wait for the community to discover your listings.
+          New swap proposals will appear here automatically.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-3xl border border-dashed border-emerald-500/30 bg-surface-secondary/50 p-8 text-secondary-content">
+      <h3 className="text-lg font-semibold text-primary-content">
+        You haven&apos;t made any offers yet
+      </h3>
+      <p className="mt-2 text-sm leading-relaxed">
+        Browse the marketplace and propose a swap. We&apos;ll keep track of your
+        offers and surface any updates right here.
+      </p>
+    </div>
+  );
+}
+
 function EmptyState() {
   return (
     <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-6 rounded-3xl border border-dashed border-emerald-500/30 bg-surface-secondary/60 p-12 text-center shadow-inner">
@@ -306,12 +394,11 @@ function EmptyState() {
       </div>
       <div className="space-y-3">
         <h2 className="text-2xl font-semibold text-primary-content">
-          No offers just yet
+          No offer activity yet
         </h2>
         <p className="max-w-lg text-secondary-content">
-          When someone proposes a swap for one of your listings, you&apos;ll see
-          it here. Keep your listings active or explore new matches to kickstart
-          the conversation.
+          Once you start trading with the community, you&apos;ll see incoming swaps
+          and the offers you send all in one inbox.
         </p>
       </div>
       <Button asChild>
@@ -323,3 +410,4 @@ function EmptyState() {
     </div>
   );
 }
+
