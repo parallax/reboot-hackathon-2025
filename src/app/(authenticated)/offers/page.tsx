@@ -72,10 +72,10 @@ export default async function OffersPage() {
     row: (typeof offerRows)[number]
   ): OfferGroup["offers"][number] => ({
     id: row.offerId,
-    createdAt: row.createdAt?.toISOString() ?? null,
-    expiry: row.expiry?.toISOString() ?? null,
-    acceptedAt: row.acceptedAt?.toISOString() ?? null,
-    rejectedAt: row.rejectedAt?.toISOString() ?? null,
+    createdAt: row.createdAt ?? null,
+    expiry: row.expiry ?? null,
+    acceptedAt: row.acceptedAt ?? null,
+    rejectedAt: row.rejectedAt ?? null,
     offeredItem: row.offeredItemId
       ? {
           id: row.offeredItemId,
@@ -86,6 +86,12 @@ export default async function OffersPage() {
         }
       : null,
     rejectionReason: row.rejectReason ?? null,
+    offererName: row.offeredItemOwnerId
+      ? userNames.get(row.offeredItemOwnerId)
+      : undefined,
+    targetUserName: row.itemOwnerId
+      ? userNames.get(row.itemOwnerId)
+      : undefined,
   });
 
   const receivedMap = new Map<number, OfferGroup>();

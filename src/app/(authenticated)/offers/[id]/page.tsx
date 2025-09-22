@@ -135,7 +135,6 @@ export default async function Page({ params }: OffersPageProps) {
         : null,
       rejectionReason: offer.rejectReason ?? null,
     })),
-    viewerIsOwner: isListingOwner,
   };
 
   return <OfferDetailView {...payload} />;

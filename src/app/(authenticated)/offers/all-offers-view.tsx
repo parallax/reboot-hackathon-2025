@@ -366,6 +366,9 @@ function OfferGroupCard({ group, formatDate, context }: OfferGroupCardProps) {
     context === "received"
       ? "Latest offer summary"
       : "Latest update on your offer";
+  const historyLabel = context === "received" ? "Offer history" : "Your offers";
+  const offeredItemLabel =
+    context === "received" ? "Offered item" : "Your item";
 
   return (
     <Card className="border border-emerald-500/10 bg-surface-secondary/80">
@@ -410,7 +413,9 @@ function OfferGroupCard({ group, formatDate, context }: OfferGroupCardProps) {
             </span>
             <div className="flex flex-wrap items-center gap-3 text-primary-content">
               <Badge
-                className={`px-3 py-1 text-xs font-medium ${latestStatus ? STATUS_BADGE[latestStatus] : ""}`}
+                className={`px-3 py-1 text-xs font-medium ${
+                  latestStatus ? STATUS_BADGE[latestStatus] : ""
+                }`}
               >
                 {latestStatus ? STATUS_LABEL[latestStatus] : "No status"}
               </Badge>
@@ -487,10 +492,12 @@ function OfferGroupCard({ group, formatDate, context }: OfferGroupCardProps) {
                       Expires {offer.expiry ? formatDate(offer.expiry) : "Open"}
                     </span>
                     <span>
-                      Accepted {offer.acceptedAt ? formatDate(offer.acceptedAt) : "—"}
+                      Accepted{" "}
+                      {offer.acceptedAt ? formatDate(offer.acceptedAt) : "—"}
                     </span>
                     <span>
-                      Declined {offer.rejectedAt ? formatDate(offer.rejectedAt) : "—"}
+                      Declined{" "}
+                      {offer.rejectedAt ? formatDate(offer.rejectedAt) : "—"}
                     </span>
                   </div>
                 </div>
