@@ -16,7 +16,6 @@ export function Header({ debugEnabled = false }: HeaderProps) {
     <header className="sticky top-0 z-50 bg-surface border-b border-border backdrop-blur-sm bg-surface/95">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          {/* Mobile menu button */}
           <Button variant="ghost" size="icon" className="md:hidden">
             <Menu className="h-5 w-5" />
           </Button>
@@ -25,7 +24,7 @@ export function Header({ debugEnabled = false }: HeaderProps) {
             href="/"
             className="flex items-center md:static absolute left-1/2 transform md:transform-none -translate-x-1/2 md:translate-x-0"
           >
-            <div className="w-8 h-8 bg-primary dark:bg-emerald-500 rounded-lg flex items-center justify-center sm:flex hidden">
+            <div className="w-8 h-8 bg-primary dark:bg-emerald-500 rounded-lg items-center justify-center sm:flex hidden">
               <RefreshCcwDot className="h-4 w-4 text-white" />
             </div>
             <span className="font-brand font-bold text-lg text-primary dark:text-white pl-2">
@@ -72,19 +71,11 @@ export function Header({ debugEnabled = false }: HeaderProps) {
               <div className="ml-2 flex items-center">
                 <SignedIn>
                   <UserButton
-                    userProfileUrl="/profile-setup"
+                    userProfileUrl="/profile"
                     appearance={{
                       elements: { userButtonAvatarBox: "h-8 w-8" },
                     }}
-                  >
-                    <UserButton.MenuItems>
-                      <UserButton.Link
-                        label="Profile settings"
-                        href="/profile-setup"
-                      />
-                      <UserButton.Action label="Sign out" action="signOut" />
-                    </UserButton.MenuItems>
-                  </UserButton>
+                  />
                 </SignedIn>
                 <SignedOut>
                   <SignInButton mode="redirect">
