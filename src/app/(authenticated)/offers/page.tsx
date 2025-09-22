@@ -2,10 +2,15 @@ import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import { desc, eq, or } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
+import { createClerkClient } from "@clerk/backend";
 
 import { db } from "@/db";
 import { items, offerHistory } from "@/db/schema";
-import { AllOffersView, type OfferGroup } from "./all-offers-view";
+import {
+  AllOffersView,
+  type OfferGroup,
+  type ItemSummary,
+} from "./all-offers-view";
 
 export default async function OffersPage() {
   const { userId } = await auth();
@@ -42,15 +47,38 @@ export default async function OffersPage() {
     .where(or(eq(items.userId, userId), eq(offeredItems.userId, userId)))
     .orderBy(desc(offerHistory.createdAt));
 
-  const receivedMap = new Map<number, OfferGroup>();
-  const sentMap = new Map<number, OfferGroup>();
+  // Get unique user IDs to fetch usernames
+  const uniqueUserIds = new Set<string>();
+  offerRows.forEach((row) => {
+    if (row.itemOwnerId) uniqueUserIds.add(row.itemOwnerId);
+    if (row.offeredItemOwnerId) uniqueUserIds.add(row.offeredItemOwnerId);
+  });
 
-  const buildOfferEntry = (row: (typeof offerRows)[number]): OfferGroup["offers"][number] => ({
+  // Fetch usernames from Clerk
+  const clerkClient = createClerkClient({
+    secretKey: process.env.CLERK_SECRET_KEY!,
+  });
+
+  const userNames = new Map<string, string>();
+  for (const uid of uniqueUserIds) {
+    try {
+      const user = await clerkClient.users.getUser(uid);
+      userNames.set(uid, user.firstName ?? `User ${uid.slice(0, 8)}...`);
+    } catch (error) {
+      console.error("Error fetching user from Clerk:", error);
+      userNames.set(uid, `User ${uid.slice(0, 8)}...`);
+    }
+  }
+
+  // Build offer entries with usernames
+  const buildOfferEntry = (
+    row: (typeof offerRows)[number]
+  ): OfferGroup["offers"][number] => ({
     id: row.offerId,
-    createdAt: row.createdAt ?? null,
-    expiry: row.expiry ?? null,
-    acceptedAt: row.acceptedAt ?? null,
-    rejectedAt: row.rejectedAt ?? null,
+    createdAt: row.createdAt?.toISOString() ?? null,
+    expiry: row.expiry?.toISOString() ?? null,
+    acceptedAt: row.acceptedAt?.toISOString() ?? null,
+    rejectedAt: row.rejectedAt?.toISOString() ?? null,
     offeredItem: row.offeredItemId
       ? {
           id: row.offeredItemId,
@@ -60,15 +88,19 @@ export default async function OffersPage() {
           repeatable: row.offeredItemRepeatable ?? false,
         }
       : null,
+    offererName: row.offeredItemOwnerId ? userNames.get(row.offeredItemOwnerId) : undefined,
+    targetUserName: row.itemOwnerId ? userNames.get(row.itemOwnerId) : undefined,
   });
 
-  for (const row of offerRows) {
-    if (row.itemOwnerId === userId) {
-      const existingGroup = receivedMap.get(row.itemId);
+  const receivedMap = new Map<number, OfferGroup>();
+  const sentMap = new Map<number, OfferGroup>();
 
-      if (existingGroup) {
-        existingGroup.offers.push(buildOfferEntry(row));
-      } else {
+  for (const row of offerRows) {
+    const offerEntry = buildOfferEntry(row);
+
+    if (row.itemOwnerId === userId) {
+      // This is a received offer (someone offered on my item)
+      if (!receivedMap.has(row.itemId)) {
         receivedMap.set(row.itemId, {
           item: {
             id: row.itemId,
@@ -77,17 +109,13 @@ export default async function OffersPage() {
             imageUrl: row.itemImageUrl,
             repeatable: row.itemRepeatable,
           },
-          offers: [buildOfferEntry(row)],
+          offers: [],
         });
       }
-    }
-
-    if (row.offeredItemOwnerId === userId) {
-      const existingGroup = sentMap.get(row.itemId);
-
-      if (existingGroup) {
-        existingGroup.offers.push(buildOfferEntry(row));
-      } else {
+      receivedMap.get(row.itemId)!.offers.push(offerEntry);
+    } else if (row.offeredItemOwnerId === userId) {
+      // This is a sent offer (I offered on someone else's item)
+      if (!sentMap.has(row.itemId)) {
         sentMap.set(row.itemId, {
           item: {
             id: row.itemId,
@@ -96,32 +124,54 @@ export default async function OffersPage() {
             imageUrl: row.itemImageUrl,
             repeatable: row.itemRepeatable,
           },
-          offers: [buildOfferEntry(row)],
+          offers: [],
         });
       }
+      sentMap.get(row.itemId)!.offers.push(offerEntry);
     }
   }
 
   const sortGroupOffers = (group: OfferGroup) => ({
     ...group,
     offers: group.offers.sort((a, b) => {
-      const aTime = a.createdAt?.getTime() ?? 0;
-      const bTime = b.createdAt?.getTime() ?? 0;
+      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
       return bTime - aTime;
     }),
   });
 
   const sortGroups = (groups: OfferGroup[]) =>
-    groups
-      .map(sortGroupOffers)
-      .sort((a, b) => {
-        const latestA = a.offers[0]?.createdAt?.getTime() ?? 0;
-        const latestB = b.offers[0]?.createdAt?.getTime() ?? 0;
-        return latestB - latestA;
-      });
+    groups.map(sortGroupOffers).sort((a, b) => {
+      const latestA = a.offers[0]?.createdAt
+        ? new Date(a.offers[0].createdAt).getTime()
+        : 0;
+      const latestB = b.offers[0]?.createdAt
+        ? new Date(b.offers[0].createdAt).getTime()
+        : 0;
+      return latestB - latestA;
+    });
 
   const received = sortGroups(Array.from(receivedMap.values()));
   const sent = sortGroups(Array.from(sentMap.values()));
 
-  return <AllOffersView received={received} sent={sent} />;
+  // Get all user items to show in "My Listings" section
+  const allUserItems = await db
+    .select({
+      id: items.id,
+      title: items.title,
+      description: items.description,
+      imageUrl: items.imageUrl,
+      repeatable: items.repeatable,
+    })
+    .from(items)
+    .where(eq(items.userId, userId))
+    .orderBy(desc(items.id));
+
+  return (
+    <AllOffersView
+      received={received}
+      sent={sent}
+      allUserItems={allUserItems}
+    />
+  );
 }
