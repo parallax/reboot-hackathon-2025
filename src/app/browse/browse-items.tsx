@@ -48,7 +48,7 @@ export function BrowseItems({
   };
 
   return (
-    <div className="flex flex-col bg-surface p-4">
+    <div className="flex flex-col bg-surface py-4">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-primary-content">
           Browse Listings
