@@ -11,6 +11,8 @@ import {
   Tag,
   Calendar,
   Edit,
+  MapPin,
+  Star,
 } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -41,7 +43,10 @@ interface ItemData {
   active: boolean;
   userId: string;
   userName: string;
+  userImageUrl: string | null;
   userLocation: string;
+  averageRating: number | null;
+  totalReviews: number;
   tags: Array<{ id: number; name: string }>;
 }
 
@@ -269,13 +274,51 @@ export default function ItemPage() {
               </Badge>
             </div>
 
-            {/* Owner */}
-            <div className="flex items-center gap-2">
-              <User className="h-4 w-4 text-muted-content" />
-              <span className="text-sm text-muted-content">
-                Posted by: {item.userName}{" "}
-                {item.userLocation ? `from ${item.userLocation}` : ""}
-              </span>
+            {/* User Profile */}
+            <div className="flex items-center gap-3 p-3 bg-surface-secondary rounded-lg border">
+              <div className="relative">
+                {item.userImageUrl ? (
+                  <Image
+                    src={item.userImageUrl}
+                    alt={`${item.userName}'s profile`}
+                    width={48}
+                    height={48}
+                    className="rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-12 h-12 bg-surface-tertiary rounded-full flex items-center justify-center">
+                    <User className="h-6 w-6 text-muted-content" />
+                  </div>
+                )}
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="font-medium text-primary-content">{item.userName}</h3>
+                  {item.userLocation && (
+                    <div className="flex items-center gap-1 text-muted-content">
+                      <MapPin className="h-3 w-3" />
+                      <span className="text-sm">{item.userLocation}</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-1">
+                  {item.averageRating !== null ? (
+                    <>
+                      <div className="flex items-center gap-1">
+                        <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                        <span className="text-sm font-medium text-secondary-content">
+                          {item.averageRating.toFixed(1)}
+                        </span>
+                      </div>
+                      <span className="text-xs text-muted-content">
+                        ({item.totalReviews} review{item.totalReviews !== 1 ? 's' : ''})
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-sm text-muted-content">No reviews yet</span>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
