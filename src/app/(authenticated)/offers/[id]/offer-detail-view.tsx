@@ -49,17 +49,26 @@ type OfferEntry = {
   rejectedAt: string | null;
   rejectionReason: string | null;
   offeredItem: ItemSummary | null;
+  offeredByViewer: boolean;
 };
 
 export type OfferDetailViewProps = {
   item: ItemSummary;
   offers: OfferEntry[];
+  viewerIsOwner: boolean;
+  viewerIsOfferer: boolean;
 };
 
 type OfferStatus = "pending" | "accepted" | "rejected";
 
-const STATUS_COPY: Record<OfferStatus, string> = {
+const OWNER_STATUS_COPY: Record<OfferStatus, string> = {
   pending: "Awaiting your response",
+  accepted: "Accepted",
+  rejected: "Declined",
+};
+
+const PARTNER_STATUS_COPY: Record<OfferStatus, string> = {
+  pending: "Awaiting their response",
   accepted: "Accepted",
   rejected: "Declined",
 };
@@ -79,7 +88,7 @@ function resolveStatus(offer: OfferEntry): OfferStatus {
   return "pending";
 }
 
-export function OfferDetailView({ item, offers }: OfferDetailViewProps) {
+export function OfferDetailView({ item, offers, viewerIsOwner, viewerIsOfferer }: OfferDetailViewProps) {
   const [activeTab, setActiveTab] = useState<"recent" | "history">("recent");
 
   const latestOffer = useMemo(() => offers.at(0) ?? null, [offers]);
@@ -92,10 +101,13 @@ export function OfferDetailView({ item, offers }: OfferDetailViewProps) {
     text: string;
   } | null>(null);
 
-  const respondableOffer = offers.find(
-    (offer) => !offer.acceptedAt && !offer.rejectedAt
-  )
+  const respondableOffer = viewerIsOwner
     ? offers.find((offer) => !offer.acceptedAt && !offer.rejectedAt)
+    : viewerIsOfferer
+    ? offers.find(
+        (offer) =>
+          offer.offeredByViewer && !offer.acceptedAt && !offer.rejectedAt
+      )
     : null;
 
   useEffect(() => {
@@ -118,6 +130,14 @@ export function OfferDetailView({ item, offers }: OfferDetailViewProps) {
   const formatDateTime = (value: string | null) =>
     value ? dateFormatter.format(new Date(value)) : "Not set";
 
+  const statusCopy = viewerIsOwner
+    ? OWNER_STATUS_COPY
+    : PARTNER_STATUS_COPY;
+
+  const headerMessage = viewerIsOwner
+    ? "Only you can view offers for this listing"
+    : "You proposed this swap";
+
   const handleRespond = (decision: "accept" | "reject") => {
     if (!respondableOffer) {
       return;
@@ -125,7 +145,7 @@ export function OfferDetailView({ item, offers }: OfferDetailViewProps) {
 
     setStatusMessage(null);
 
-    if (decision === "reject") {
+    if (decision === "reject" && viewerIsOwner) {
       const message = declineReason.trim();
       if (!message) {
         setStatusMessage({
@@ -137,10 +157,16 @@ export function OfferDetailView({ item, offers }: OfferDetailViewProps) {
     }
 
     startTransition(async () => {
+      const trimmedReason = declineReason.trim();
       const result = await respondToOffer({
         offerHistoryId: respondableOffer.id,
         decision,
-        reason: decision === "reject" ? declineReason.trim() : undefined,
+        reason:
+          decision === "reject"
+            ? viewerIsOwner
+              ? trimmedReason
+              : trimmedReason || undefined
+            : undefined,
       });
 
       if (!result.success) {
@@ -156,7 +182,9 @@ export function OfferDetailView({ item, offers }: OfferDetailViewProps) {
         text:
           decision === "accept"
             ? "Offer marked as accepted."
-            : "Offer declined.",
+            : viewerIsOwner
+            ? "Offer declined."
+            : "Offer withdrawn.",
       });
 
       if (decision === "reject") {
@@ -168,7 +196,7 @@ export function OfferDetailView({ item, offers }: OfferDetailViewProps) {
     });
   };
 
-  const respondPanel = respondableOffer ? (
+  const ownerRespondPanel = (
     <div className="mt-4 space-y-4 rounded-2xl border border-emerald-500/20 bg-surface/70 p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1">
@@ -231,7 +259,55 @@ export function OfferDetailView({ item, offers }: OfferDetailViewProps) {
         </div>
       ) : null}
     </div>
-  ) : null;
+  );
+
+  const offererRespondPanel = (
+    <div className="mt-4 space-y-4 rounded-2xl border border-emerald-500/20 bg-surface/70 p-5">
+      <div className="space-y-1">
+        <p className="text-sm font-semibold text-primary-content">
+          Withdraw this offer
+        </p>
+        <p className="text-sm text-secondary-content">
+          Changed your mind? Add an optional note and cancel the swap request.
+        </p>
+      </div>
+      {statusMessage ? (
+        <p
+          className={`text-sm ${
+            statusMessage.type === "error"
+              ? "text-rose-500"
+              : "text-emerald-500"
+          }`}
+        >
+          {statusMessage.text}
+        </p>
+      ) : null}
+      <Textarea
+        value={declineReason}
+        onChange={(event) => setDeclineReason(event.target.value)}
+        placeholder="Share an optional note for the listing owner..."
+        rows={3}
+      />
+      <div className="flex justify-end">
+        <Button
+          variant="secondary"
+          className="bg-rose-500 text-white hover:bg-rose-600"
+          onClick={() => handleRespond("reject")}
+          disabled={isPending}
+        >
+          {isPending ? "Cancelling..." : "Withdraw offer"}
+        </Button>
+      </div>
+    </div>
+  );
+
+  const respondPanel = respondableOffer
+    ? viewerIsOwner
+      ? ownerRespondPanel
+      : viewerIsOfferer
+      ? offererRespondPanel
+      : null
+    : null;
 
   return (
     <div className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 overflow-hidden bg-surface px-4 pb-16 pt-10 sm:px-8">
@@ -248,9 +324,7 @@ export function OfferDetailView({ item, offers }: OfferDetailViewProps) {
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div className="flex items-center gap-3 text-secondary-content">
             <ShieldCheck className="size-5 text-emerald-500" />
-            <span className="text-sm font-medium">
-              Only you can view offers for this listing
-            </span>
+            <span className="text-sm font-medium">{headerMessage}</span>
           </div>
           <Button asChild variant="outline" className="w-full sm:w-auto">
             <Link href="/browse">
@@ -326,12 +400,16 @@ export function OfferDetailView({ item, offers }: OfferDetailViewProps) {
             latestOffer={latestOffer}
             formatDateTime={formatDateTime}
             respondSlot={respondPanel}
+            viewerIsOwner={viewerIsOwner}
+            statusCopy={statusCopy}
           />
         ) : (
           <OfferHistoryPanel
             item={item}
             offers={offers}
             formatDateTime={formatDateTime}
+            viewerIsOwner={viewerIsOwner}
+            statusCopy={statusCopy}
           />
         )}
       </section>
@@ -344,11 +422,15 @@ function LatestOfferPanel({
   latestOffer,
   formatDateTime,
   respondSlot,
+  viewerIsOwner,
+  statusCopy,
 }: {
   item: ItemSummary;
   latestOffer: OfferEntry | null;
   formatDateTime: (value: string | null) => string;
   respondSlot?: ReactNode;
+  viewerIsOwner: boolean;
+  statusCopy: Record<OfferStatus, string>;
 }) {
   if (!latestOffer) {
     return (
@@ -360,6 +442,14 @@ function LatestOfferPanel({
   }
 
   const status = resolveStatus(latestOffer);
+
+  const listingCardMeta = viewerIsOwner
+    ? { label: "What you're offering", accent: "owner" as const }
+    : { label: "Listing you're considering", accent: "partner" as const };
+
+  const offeredCardMeta = viewerIsOwner
+    ? { label: "What they're proposing", accent: "partner" as const }
+    : { label: "What you offered", accent: "owner" as const };
 
   return (
     <Card className="overflow-hidden border border-emerald-500/15 bg-surface-secondary/80 shadow-lg">
@@ -377,7 +467,7 @@ function LatestOfferPanel({
             className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium shadow-sm ${STATUS_BADGE[status]}`}
           >
             <RefreshCcwDot className="size-4" />
-            {STATUS_COPY[status]}
+            {statusCopy[status]}
           </span>
         </div>
       </CardHeader>
@@ -385,13 +475,13 @@ function LatestOfferPanel({
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <OfferItemCard
             item={item}
-            label="What you're offering"
-            accent="owner"
+            label={listingCardMeta.label}
+            accent={listingCardMeta.accent}
           />
           <OfferItemCard
             item={latestOffer.offeredItem}
-            label="What they're proposing"
-            accent="partner"
+            label={offeredCardMeta.label}
+            accent={offeredCardMeta.accent}
           />
         </div>
 
@@ -415,7 +505,7 @@ function LatestOfferPanel({
           <OfferMeta
             icon={RefreshCcwDot}
             label="Status"
-            value={STATUS_COPY[status]}
+            value={statusCopy[status]}
           />
         </div>
 
@@ -435,10 +525,14 @@ function OfferHistoryPanel({
   item,
   offers,
   formatDateTime,
+  viewerIsOwner,
+  statusCopy,
 }: {
   item: ItemSummary;
   offers: OfferEntry[];
   formatDateTime: (value: string | null) => string;
+  viewerIsOwner: boolean;
+  statusCopy: Record<OfferStatus, string>;
 }) {
   if (offers.length === 0) {
     return (
@@ -448,6 +542,14 @@ function OfferHistoryPanel({
       />
     );
   }
+
+  const historyListingMeta = viewerIsOwner
+    ? { label: "Your item", accent: "owner" as const }
+    : { label: "Their item", accent: "partner" as const };
+
+  const historyOfferedMeta = viewerIsOwner
+    ? { label: "Their item", accent: "partner" as const }
+    : { label: "Your item", accent: "owner" as const };
 
   return (
     <div className="relative flex flex-col gap-6 before:absolute before:left-1 before:top-4 before:h-[calc(100%-1rem)] before:w-px before:bg-emerald-500/15">
@@ -479,7 +581,7 @@ function OfferHistoryPanel({
                   <span
                     className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium shadow-sm ${STATUS_BADGE[status]}`}
                   >
-                    {STATUS_COPY[status]}
+                    {statusCopy[status]}
                   </span>
                 </div>
               </CardHeader>
@@ -487,14 +589,14 @@ function OfferHistoryPanel({
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                   <OfferItemCard
                     item={item}
-                    label="Your item"
-                    accent="owner"
+                    label={historyListingMeta.label}
+                    accent={historyListingMeta.accent}
                     subdued
                   />
                   <OfferItemCard
                     item={offer.offeredItem}
-                    label="Their item"
-                    accent="partner"
+                    label={historyOfferedMeta.label}
+                    accent={historyOfferedMeta.accent}
                     subdued
                   />
                 </div>

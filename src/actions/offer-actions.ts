@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { offers, offerHistory, items } from "@/db/schema";
 import { auth } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { sendOfferEmail } from "./send-offer-email";
@@ -82,14 +83,18 @@ export async function respondToOffer({
     return { success: false, error: "User not authenticated" };
   }
 
+  const offeredItems = alias(items, "offered_items");
+
   const [record] = await db
     .select({
       offerId: offerHistory.id,
       itemId: offerHistory.itemId,
       itemOwnerId: items.userId,
+      offeredOwnerId: offeredItems.userId,
     })
     .from(offerHistory)
     .innerJoin(items, eq(items.id, offerHistory.itemId))
+    .leftJoin(offeredItems, eq(offeredItems.id, offerHistory.offeredItemId))
     .where(eq(offerHistory.id, offerHistoryId))
     .limit(1);
 
@@ -97,34 +102,40 @@ export async function respondToOffer({
     return { success: false, error: "Offer not found" };
   }
 
-  if (record.itemOwnerId !== userId) {
+  const isListingOwner = record.itemOwnerId === userId;
+  const isOfferOwner = record.offeredOwnerId === userId;
+
+  if (!isListingOwner && !isOfferOwner) {
     return { success: false, error: "You are not authorised to respond to this offer" };
   }
 
-  if (decision === "reject") {
-    const message = reason?.trim();
-    if (!message) {
-      return { success: false, error: "Decline reason is required" };
-    }
-
-    await db
-      .update(offerHistory)
-      .set({
-        acceptedAt: null,
-        rejectedAt: new Date(),
-        rejectReason: message,
-      })
-      .where(eq(offerHistory.id, offerHistoryId));
-  } else {
-    await db
-      .update(offerHistory)
-      .set({
-        acceptedAt: new Date(),
-        rejectedAt: null,
-        rejectReason: null,
-      })
-      .where(eq(offerHistory.id, offerHistoryId));
+  if (decision === "accept" && !isListingOwner) {
+    return { success: false, error: "Only the listing owner can accept an offer" };
   }
+
+  const trimmedReason = reason?.trim() ?? "";
+
+  if (decision === "reject" && isListingOwner && !trimmedReason) {
+    return { success: false, error: "Decline reason is required" };
+  }
+
+  const updates =
+    decision === "accept"
+      ? {
+          acceptedAt: new Date(),
+          rejectedAt: null,
+          rejectReason: null,
+        }
+      : {
+          acceptedAt: null,
+          rejectedAt: new Date(),
+          rejectReason: trimmedReason || null,
+        };
+
+  await db
+    .update(offerHistory)
+    .set(updates)
+    .where(eq(offerHistory.id, offerHistoryId));
 
   revalidatePath(`/offers/${record.itemId}`);
   revalidatePath(`/offers`);
