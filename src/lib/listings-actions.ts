@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db/index";
-import { items, itemTags, tags, userPreferences } from "@/db/schema";
+import { items, itemTags } from "@/db/schema";
 import { auth } from "@clerk/nextjs/server";
 import { createClerkClient } from "@clerk/backend";
 import { revalidatePath } from "next/cache";
@@ -130,90 +130,49 @@ export async function getUserListings(userId?: string) {
   }
 }
 
-export async function getActiveListings() {
-  try {
-    // First get all active items with their tag relationships
-    const itemsWithTags = await db
-      .select({
-        id: items.id,
-        title: items.title,
-        description: items.description,
-        imageUrl: items.imageUrl,
-        repeatable: items.repeatable,
-        userId: items.userId,
-        tagId: itemTags.tagId,
-        tagName: tags.name,
-      })
-      .from(items)
-      .leftJoin(itemTags, eq(items.id, itemTags.itemId))
-      .leftJoin(tags, eq(itemTags.tagId, tags.id))
-      .where(eq(items.active, true))
-      .orderBy(desc(items.id));
+export async function getActiveListings({
+  selectedCategories,
+}: {
+  selectedCategories: string[];
+}) {
+  // Get all active items with their tags
+  const allActiveItems = await db.query.items.findMany({
+    with: {
+      itemTags: {
+        with: {
+          tag: true,
+          item: true,
+        },
+      },
+    },
+    where: eq(items.active, true),
+    orderBy: desc(items.id),
+  });
 
-    // Group items by ID to handle multiple tags per item
-    const groupedItems = new Map();
-
-    for (const row of itemsWithTags) {
-      if (!groupedItems.has(row.id)) {
-        groupedItems.set(row.id, {
-          id: row.id,
-          title: row.title,
-          description: row.description,
-          imageUrl: row.imageUrl,
-          repeatable: row.repeatable,
-          userId: row.userId,
-          tagId: row.tagId, // Keep the first tag for compatibility
-          tagName: row.tagName, // Keep the first tag name for compatibility
-          tags: [],
-        });
-      }
-
-      // Add tag to the tags array if it exists
-      if (row.tagId && row.tagName) {
-        const item = groupedItems.get(row.id);
-        if (!item.tags.some((tag) => tag.id === row.tagId)) {
-          item.tags.push({ id: row.tagId, name: row.tagName });
-        }
-      }
-    }
-
-    // Convert map to array and maintain the original structure for compatibility
-    const activeListings = Array.from(groupedItems.values());
-
-    return {
-      success: true,
-      data: activeListings,
-    };
-  } catch (error) {
-    console.error("Error fetching active listings:", error);
-    return {
-      success: false,
-      error: "Failed to fetch listings",
-    };
-  }
+  // Filter items that have at least one tag matching selected categories
+  const selectedCategoryIds = selectedCategories.map(Number);
+  return allActiveItems.filter((item) =>
+    item.itemTags?.some(
+      (tagItem) => tagItem.tag && selectedCategoryIds.includes(tagItem.tag.id)
+    )
+  );
 }
 
 export async function getItemById(itemId: number) {
   try {
     // Get the item with its tags and user preferences
-    const itemWithTags = await db
-      .select({
-        id: items.id,
-        title: items.title,
-        description: items.description,
-        imageUrl: items.imageUrl,
-        repeatable: items.repeatable,
-        active: items.active,
-        userId: items.userId,
-        userLocation: userPreferences.location,
-        tagId: tags.id,
-        tagName: tags.name,
-      })
-      .from(items)
-      .leftJoin(itemTags, eq(items.id, itemTags.itemId))
-      .leftJoin(tags, eq(itemTags.tagId, tags.id))
-      .leftJoin(userPreferences, eq(items.userId, userPreferences.userId))
-      .where(eq(items.id, itemId));
+    const itemWithTags = await db.query.items.findMany({
+      with: {
+        itemTags: {
+          with: {
+            tag: true,
+            item: true,
+          },
+        },
+        userPreferences: true,
+      },
+      where: eq(items.id, itemId),
+    });
 
     if (itemWithTags.length === 0) {
       return {
@@ -224,11 +183,12 @@ export async function getItemById(itemId: number) {
 
     // Transform the data to group tags
     const item = itemWithTags[0];
-    const itemTags_list = itemWithTags
-      .filter((row) => row.tagId !== null)
-      .map((row) => ({
-        id: row.tagId!,
-        name: row.tagName!,
+    const tags = itemWithTags
+      .flatMap((row) => row.itemTags || [])
+      .filter((tagItem) => tagItem.tag?.id !== null)
+      .map((tagItem) => ({
+        id: tagItem.tag?.id || null,
+        name: tagItem.tag?.name || "",
       }));
 
     // Get user name from Clerk for the item creator
@@ -261,8 +221,9 @@ export async function getItemById(itemId: number) {
         active: item.active,
         userId: item.userId,
         userName: userName,
-        userLocation: item.userLocation || "Location not specified",
-        tags: itemTags_list,
+        userLocation:
+          item?.userPreferences?.location || "Location not specified",
+        tags: tags,
       },
     };
   } catch (error) {
