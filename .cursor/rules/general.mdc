@@ -6,11 +6,15 @@ alwaysApply: true
 
 Swapable App
 
+NextJS
+- Always use server actions over API routes.
+- Use React-Hook-Form
+
 Hackathon Brief
 The goal is to strengthen the fabric of Leeds’ business ecosystem by building stronger connections and communication channels. Design a tool, application or service that helps local suppliers, service providers, and customers find and connect more easily for mutual benefit. Whether it’s a matchmaking engine for B2B partnerships or a shared marketplace for community needs, the aim will be to further stimulate the local business economy.
 
 Top Level Description
-A mobile-first web app that enables individuals from businesses local to Leeds to easily swap skills, equipment, materials, products and services, with minimal effort. 
+A mobile-first web app (avoid using modals, use drawers if you really need to) that enables individuals from businesses local to Leeds to easily swap skills, equipment, materials, products and services, with minimal effort. 
 
 Schema
 Use Drizzle-orm but assume the migrations have already been run to interact with a Postgresql database. 
