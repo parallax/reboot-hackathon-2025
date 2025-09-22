@@ -30,6 +30,8 @@ interface ItemData {
   repeatable: boolean;
   active: boolean;
   userId: string;
+  userName: string;
+  userLocation: string;
   tags: Array<{ id: number; name: string }>;
 }
 
@@ -255,7 +257,7 @@ export default function ItemPage() {
             <div className="flex items-center gap-2">
               <User className="h-4 w-4 text-muted-content" />
               <span className="text-sm text-muted-content">
-                Posted by: {item.userId}
+                Posted by: {item.userName} from {item.userLocation}
               </span>
             </div>
           </div>
