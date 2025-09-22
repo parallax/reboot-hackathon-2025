@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from '@/db/index';
-import { items, itemTags } from '@/db/schema';
+import { items, itemTags, tags } from '@/db/schema';
 import { auth } from '@clerk/nextjs/server';
 import { revalidatePath } from 'next/cache';
 import { eq, desc } from 'drizzle-orm';
@@ -151,6 +151,65 @@ export async function getActiveListings() {
     return {
       success: false,
       error: 'Failed to fetch listings'
+    };
+  }
+}
+
+export async function getItemById(itemId: number) {
+  try {
+    // Get the item with its tags
+    const itemWithTags = await db
+      .select({
+        id: items.id,
+        title: items.title,
+        description: items.description,
+        imageUrl: items.imageUrl,
+        repeatable: items.repeatable,
+        active: items.active,
+        userId: items.userId,
+        tagId: tags.id,
+        tagName: tags.name,
+      })
+      .from(items)
+      .leftJoin(itemTags, eq(items.id, itemTags.itemId))
+      .leftJoin(tags, eq(itemTags.tagId, tags.id))
+      .where(eq(items.id, itemId));
+
+    if (itemWithTags.length === 0) {
+      return {
+        success: false,
+        error: 'Item not found'
+      };
+    }
+
+    // Transform the data to group tags
+    const item = itemWithTags[0];
+    const itemTags_list = itemWithTags
+      .filter(row => row.tagId !== null)
+      .map(row => ({
+        id: row.tagId!,
+        name: row.tagName!
+      }));
+
+    return {
+      success: true,
+      data: {
+        id: item.id,
+        title: item.title,
+        description: item.description,
+        imageUrl: item.imageUrl,
+        repeatable: item.repeatable,
+        active: item.active,
+        userId: item.userId,
+        tags: itemTags_list
+      }
+    };
+
+  } catch (error) {
+    console.error('Error fetching item:', error);
+    return {
+      success: false,
+      error: 'Failed to fetch item'
     };
   }
 }
