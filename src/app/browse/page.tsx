@@ -146,7 +146,10 @@ export default function BrowseListingsPage() {
       {/* Listings */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredListings.map((listing) => (
-          <Card key={listing.id} className="bg-surface-secondary border-input">
+          <Card
+            key={listing.id}
+            className="bg-surface-secondary border-input relative"
+          >
             <div className="relative h-48 w-full">
               <Image
                 src={listing.imageUrl}
@@ -159,7 +162,7 @@ export default function BrowseListingsPage() {
               <CardTitle className="text-primary-content">
                 <Link
                   href={`/listing/${listing.id}`}
-                  className="hover:text-primary transition-colors"
+                  className="hover:text-primary transition-colors  after:absolute after:inset-0 after:content-[''] after:z-10"
                 >
                   {listing.title}
                 </Link>
