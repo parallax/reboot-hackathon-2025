@@ -107,7 +107,7 @@ export default function ListingPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-surface p-4">
+    <div className="flex flex-col bg-surface p-4">
       <div className="mb-6">
         <Button
           variant="outline"

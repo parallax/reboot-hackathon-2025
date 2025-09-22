@@ -3,11 +3,10 @@
 import { RefreshCcwDot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { LinkButton } from "@/components/ui/linkButton";
 
 export function LandingPage() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-surface p-4">
+    <div className="flex flex-col items-center justify-center bg-surface p-4">
       <div className="flex flex-col items-center justify-center space-y-8 max-w-md w-full">
         {/* Logo */}
         <div className="flex items-center justify-center">
@@ -24,13 +23,17 @@ export function LandingPage() {
 
         {/* Buttons */}
         <div className="flex flex-col space-y-4 w-full">
-          <LinkButton href="/browse" variant="default" size="lg">
-            I need
-          </LinkButton>
+          <Link href="/browse" passHref>
+            <Button className="w-full py-6 body-large" variant="default">
+              I need
+            </Button>
+          </Link>
 
-          <LinkButton href="/browse" variant="outline" size="lg">
-            I want
-          </LinkButton>
+          <Link href="/create-listing" passHref>
+            <Button className="w-full py-6 body-large" variant="outline">
+              I have
+            </Button>
+          </Link>
         </div>
       </div>
     </div>

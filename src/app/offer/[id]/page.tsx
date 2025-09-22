@@ -7,7 +7,7 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle
+  CardTitle,
 } from "@/components/ui/card";
 
 // Mock offer history data
@@ -20,7 +20,7 @@ const mockOfferHistory = [
     acceptedAt: null,
     rejectedAt: null,
     expiry: new Date("2025-09-27"),
-    status: "pending"
+    status: "pending",
   },
   {
     id: 2,
@@ -30,8 +30,8 @@ const mockOfferHistory = [
     acceptedAt: new Date("2025-09-19"),
     rejectedAt: null,
     expiry: null,
-    status: "accepted"
-  }
+    status: "accepted",
+  },
 ];
 
 // Mock listing data
@@ -39,24 +39,26 @@ const mockListings = [
   {
     id: 1,
     title: "Web Design Services",
-    description: "Professional web design and development services for small businesses",
+    description:
+      "Professional web design and development services for small businesses",
     category: "design",
-    userId: "user1"
+    userId: "user1",
   },
   {
     id: 2,
     title: "Marketing Consultation",
     description: "Expert marketing advice for startups and growing businesses",
     category: "marketing",
-    userId: "user2"
+    userId: "user2",
   },
   {
     id: 3,
     title: "Office Space",
-    description: "Shared office space available for freelancers and small teams",
+    description:
+      "Shared office space available for freelancers and small teams",
     category: "workspace",
-    userId: "user3"
-  }
+    userId: "user3",
+  },
 ];
 
 export default function OfferHistoryPage() {
@@ -86,23 +88,31 @@ export default function OfferHistoryPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-surface p-4">
+    <div className="flex flex-col bg-surface p-4">
       <div className="mb-6">
-        <Button variant="outline" className="mb-4" onClick={() => window.history.back()}>
+        <Button
+          variant="outline"
+          className="mb-4"
+          onClick={() => window.history.back()}
+        >
           ← Back to listings
         </Button>
       </div>
 
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-primary-content mb-2">Offer History</h1>
+        <h1 className="text-2xl font-bold text-primary-content mb-2">
+          Offer History
+        </h1>
         <p className="text-muted-content">Manage and track your swap offers</p>
       </div>
 
       {/* Offer History List */}
       <div className="space-y-6">
         {mockOfferHistory.map((offer) => {
-          const item = mockListings.find(l => l.id === offer.itemId);
-          const offeredItem = mockListings.find(l => l.id === offer.offeredItemId);
+          const item = mockListings.find((l) => l.id === offer.itemId);
+          const offeredItem = mockListings.find(
+            (l) => l.id === offer.offeredItemId
+          );
 
           return (
             <Card key={offer.id} className="bg-surface-secondary border-input">
@@ -126,22 +136,34 @@ export default function OfferHistoryPage() {
                   )}
                   <p className="text-sm font-medium mt-2">
                     Status:
-                    <span className={`ml-2 ${
-                      offer.status === "accepted" ? "text-green-600" :
-                      offer.status === "rejected" ? "text-red-600" :
-                      "text-yellow-600"
-                    }`}>
-                      {offer.status.charAt(0).toUpperCase() + offer.status.slice(1)}
+                    <span
+                      className={`ml-2 ${
+                        offer.status === "accepted"
+                          ? "text-green-600"
+                          : offer.status === "rejected"
+                          ? "text-red-600"
+                          : "text-yellow-600"
+                      }`}
+                    >
+                      {offer.status.charAt(0).toUpperCase() +
+                        offer.status.slice(1)}
                     </span>
                   </p>
                 </div>
 
                 {offer.status === "pending" && (
                   <div className="flex space-x-4">
-                    <Button onClick={() => handleAccept(offer.id)} className="flex-1">
+                    <Button
+                      onClick={() => handleAccept(offer.id)}
+                      className="flex-1"
+                    >
                       Accept
                     </Button>
-                    <Button variant="outline" onClick={() => handleReject(offer.id)} className="flex-1">
+                    <Button
+                      variant="outline"
+                      onClick={() => handleReject(offer.id)}
+                      className="flex-1"
+                    >
                       Reject
                     </Button>
                   </div>
@@ -149,10 +171,14 @@ export default function OfferHistoryPage() {
 
                 {offer.status === "accepted" && (
                   <div className="text-center">
-                    <p className="text-green-600 font-medium mb-4">Offer Accepted!</p>
+                    <p className="text-green-600 font-medium mb-4">
+                      Offer Accepted!
+                    </p>
                     <Button
                       variant="outline"
-                      onClick={() => window.location.href = "https://linkedin.com"}
+                      onClick={() =>
+                        (window.location.href = "https://linkedin.com")
+                      }
                       className="w-full"
                     >
                       View LinkedIn Profile
@@ -167,7 +193,9 @@ export default function OfferHistoryPage() {
         {/* Counter Offer Section */}
         <Card className="bg-surface-secondary border-input">
           <CardHeader>
-            <CardTitle className="text-primary-content">Submit Counter Offer</CardTitle>
+            <CardTitle className="text-primary-content">
+              Submit Counter Offer
+            </CardTitle>
             <CardDescription className="text-secondary-content">
               Propose a different item in exchange
             </CardDescription>
