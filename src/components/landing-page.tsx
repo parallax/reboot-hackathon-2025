@@ -25,7 +25,7 @@ export function LandingPage() {
         <div className="flex flex-col space-y-4 w-full">
           <Link href="/browse" passHref>
             <Button className="w-full py-6 body-large" variant="default">
-              I'm looking for something
+              I&apos;m looking for something
             </Button>
           </Link>
 

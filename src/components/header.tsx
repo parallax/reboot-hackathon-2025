@@ -1,9 +1,17 @@
+"use client";
 import { Search, Menu, RefreshCcwDot, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import Link from "next/link";
 
-export function Header() {
+import { DebugMenu } from "@/components/debug-menu";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
+
+type HeaderProps = {
+  debugEnabled?: boolean;
+};
+
+export function Header({ debugEnabled = false }: HeaderProps) {
   return (
     <header className="sticky top-0 z-50 bg-surface border-b border-border backdrop-blur-sm bg-surface/95">
       <div className="container mx-auto px-4">
@@ -59,6 +67,25 @@ export function Header() {
                   <Plus className="h-4 w-4" />
                 </Button>
               </Link>
+
+              {/* Auth: Clerk user menu */}
+              <div className="ml-2">
+                <SignedIn>
+                  <UserButton userProfileUrl="/profile-setup" appearance={{ elements: { userButtonAvatarBox: "h-8 w-8" } }}>
+                    <UserButton.MenuItems>
+                      <UserButton.Link label="Profile settings" href="/profile-setup" />
+                      <UserButton.Action label="Sign out" action="signOut" />
+                    </UserButton.MenuItems>
+                  </UserButton>
+                </SignedIn>
+                <SignedOut>
+                  <SignInButton mode="redirect">
+                    <Button variant="outline" size="sm" className="ml-1">Sign in</Button>
+                  </SignInButton>
+                </SignedOut>
+              </div>
+
+              {debugEnabled ? <DebugMenu /> : null}
             </div>
           </div>
         </div>
