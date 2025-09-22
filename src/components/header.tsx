@@ -7,6 +7,7 @@ import {
   X,
   RefreshCcwDotIcon,
   Loader2,
+  ClipboardList,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -175,7 +176,18 @@ export function Header({ debugEnabled = false }: HeaderProps) {
 
             {/* Navigation icons */}
             <div className="flex items-center">
-              {/* Desktop Offers Link */}
+              {/* Desktop navigation links */}
+              <SignedIn>
+                <Link href="/my-listings" className="hidden md:block">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mr-2 text-primary-content hover:bg-surface-secondary"
+                  >
+                    My Listings
+                  </Button>
+                </Link>
+              </SignedIn>
               <SignedIn>
                 <Link href="/offers" className="hidden md:block">
                   <Button
@@ -247,6 +259,16 @@ export function Header({ debugEnabled = false }: HeaderProps) {
                 >
                   <RefreshCcwDotIcon className="h-4 w-4" />
                   My Offers
+                </Link>
+              </SignedIn>
+              <SignedIn>
+                <Link
+                  href="/my-listings"
+                  className="flex items-center gap-3 px-3 py-2 text-primary-content hover:bg-surface rounded-md transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <ClipboardList className="h-4 w-4" />
+                  My Listings
                 </Link>
               </SignedIn>
               <Link
