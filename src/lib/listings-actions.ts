@@ -1,16 +1,17 @@
 "use server";
 
-import { db } from "@/db/index";
-import { items, itemTags, tags } from "@/db/schema";
-import { auth } from "@clerk/nextjs/server";
-import { revalidatePath } from "next/cache";
-import { eq, desc } from "drizzle-orm";
+import { db } from '@/db/index';
+import { items, itemTags, tags, userPreferences } from '@/db/schema';
+import { auth } from '@clerk/nextjs/server';
+import { createClerkClient } from '@clerk/backend';
+import { revalidatePath } from 'next/cache';
+import { eq, desc } from 'drizzle-orm';
 
 export async function createListing(formData: {
   title: string;
   description: string;
   imageUrl: string;
-  tagId: number;
+  tagIds: number[];
   repeatable: boolean;
 }) {
   try {
@@ -39,10 +40,10 @@ export async function createListing(formData: {
       };
     }
 
-    if (!formData.tagId) {
+    if (!formData.tagIds || formData.tagIds.length === 0) {
       return {
         success: false,
-        error: "Category is required",
+        error: 'At least one category is required'
       };
     }
 
@@ -59,11 +60,13 @@ export async function createListing(formData: {
       })
       .returning();
 
-    // Create the item-tag relationship
-    await db.insert(itemTags).values({
+    // Create multiple item-tag relationships
+    const itemTagValues = formData.tagIds.map(tagId => ({
       itemId: newItem.id,
-      tagId: formData.tagId,
-    });
+      tagId: tagId,
+    }));
+
+    await db.insert(itemTags).values(itemTagValues);
 
     // Revalidate the listings page to show the new listing
     revalidatePath("/");
@@ -161,7 +164,7 @@ export async function getActiveListings() {
 
 export async function getItemById(itemId: number) {
   try {
-    // Get the item with its tags
+    // Get the item with its tags and user preferences
     const itemWithTags = await db
       .select({
         id: items.id,
@@ -171,12 +174,14 @@ export async function getItemById(itemId: number) {
         repeatable: items.repeatable,
         active: items.active,
         userId: items.userId,
+        userLocation: userPreferences.location,
         tagId: tags.id,
         tagName: tags.name,
       })
       .from(items)
       .leftJoin(itemTags, eq(items.id, itemTags.itemId))
       .leftJoin(tags, eq(itemTags.tagId, tags.id))
+      .leftJoin(userPreferences, eq(items.userId, userPreferences.userId))
       .where(eq(items.id, itemId));
 
     if (itemWithTags.length === 0) {
@@ -195,6 +200,24 @@ export async function getItemById(itemId: number) {
         name: row.tagName!,
       }));
 
+    // Get user name from Clerk for the item creator
+    let userName = 'Unknown User';
+    try {
+      const clerkClient = createClerkClient({
+        secretKey: process.env.CLERK_SECRET_KEY!,
+      });
+      const user = await clerkClient.users.getUser(item.userId);
+      if (user) {
+        userName = user.firstName && user.lastName 
+          ? `${user.firstName} ${user.lastName}` 
+          : user.firstName || user.username || 'Unknown User';
+      }
+    } catch (error) {
+      console.error('Error fetching user from Clerk:', error);
+      // Fallback to showing a shortened userId if we can't get the user info
+      userName = `User ${item.userId.slice(0, 8)}...`;
+    }
+
     return {
       success: true,
       data: {
@@ -205,8 +228,10 @@ export async function getItemById(itemId: number) {
         repeatable: item.repeatable,
         active: item.active,
         userId: item.userId,
-        tags: itemTags_list,
-      },
+        userName: userName,
+        userLocation: item.userLocation || 'Location not specified',
+        tags: itemTags_list
+      }
     };
   } catch (error) {
     console.error("Error fetching item:", error);
