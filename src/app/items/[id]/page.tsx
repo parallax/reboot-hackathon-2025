@@ -3,7 +3,14 @@
 import { useState, useEffect } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { ArrowLeft, RefreshCcwDot, CheckCircle, User, Tag, Calendar, Edit } from "lucide-react";
+import {
+  ArrowLeft,
+  RefreshCcwDot,
+  CheckCircle,
+  User,
+  Tag,
+  Calendar,
+} from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
@@ -61,9 +68,6 @@ export default function ItemPage() {
   // Get item ID from URL params
   const itemId = parseInt(params.id as string);
 
-  // Check if current user is the creator of this item
-  const isCreator = user?.id === item?.userId;
-
   useEffect(() => {
     // Check if we're redirected from create listing page
     if (searchParams.get("new") === "true") {
@@ -96,7 +100,6 @@ export default function ItemPage() {
         if (userItemsResult.success) {
           setUserItems((userItemsResult.data as unknown as UserItem[]) || []);
         }
-
       } catch (err) {
         console.error("Error fetching data:", err);
         setError("Failed to load item data");
@@ -128,7 +131,7 @@ export default function ItemPage() {
 
     try {
       setIsSubmittingOffer(true);
-      
+
       // First, create the offer in the database
       const offerResult = await createOffer({
         itemId: item.id,
@@ -137,7 +140,7 @@ export default function ItemPage() {
         expiryDays: 7, // Offer expires in 7 days
       });
 
-      if (!offerResult.success) {
+      if (!offerResult.success || !offerResult.data) {
         alert(`Failed to create offer: ${offerResult.error}`);
         return;
       }
@@ -146,7 +149,7 @@ export default function ItemPage() {
       const emailResult = await sendOfferEmail({
         itemId: item.id,
         offeredItemId: parseInt(selectedItem),
-        offerId: offerResult.data?.offerId || 0,
+        offerId: offerResult.data.offerId,
         offererUserId: user.id,
       });
 
@@ -159,7 +162,10 @@ export default function ItemPage() {
       } else {
         // Offer was created but email failed - still show success but warn about email
         setShowSuccessMessage(true);
-        console.warn("Offer created but email notification failed:", emailResult.error);
+        console.warn(
+          "Offer created but email notification failed:",
+          emailResult.error
+        );
         // Hide the success message after 5 seconds
         setTimeout(() => {
           setShowSuccessMessage(false);
@@ -204,7 +210,8 @@ export default function ItemPage() {
               Item Not Found
             </CardTitle>
             <CardDescription className="text-secondary-content">
-              {error || "The item you're looking for doesn't exist or has been removed."}
+              {error ||
+                "The item you're looking for doesn't exist or has been removed."}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -229,10 +236,9 @@ export default function ItemPage() {
           <CardContent className="flex items-center p-4">
             <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400 mr-2" />
             <p className="text-emerald-800 dark:text-emerald-200">
-              {searchParams.get("new") === "true" 
+              {searchParams.get("new") === "true"
                 ? "Your listing has been successfully created!"
-                : "Your offer has been created and submitted successfully! The item owner will be notified by email."
-              }
+                : "Your offer has been created and submitted successfully! The item owner will be notified by email."}
             </p>
           </CardContent>
         </Card>
@@ -281,7 +287,11 @@ export default function ItemPage() {
                 <Tag className="h-4 w-4 text-muted-content" />
                 <div className="flex flex-wrap gap-2">
                   {item.tags.map((tag) => (
-                    <Badge key={tag.id} variant="secondary" className="bg-primary/10 text-primary">
+                    <Badge
+                      key={tag.id}
+                      variant="secondary"
+                      className="bg-primary/10 text-primary"
+                    >
                       {tag.name}
                     </Badge>
                   ))}
@@ -301,85 +311,16 @@ export default function ItemPage() {
             <div className="flex items-center gap-2">
               <User className="h-4 w-4 text-muted-content" />
               <span className="text-sm text-muted-content">
-                Posted by: {item.userName} {item.userLocation ? `from ${item.userLocation}` : ""}
+                Posted by: {item.userName}{" "}
+                {item.userLocation ? `from ${item.userLocation}` : ""}
               </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Edit Item Section - Only show for creators */}
-      {item.active && isCreator && (
-        <Card className="bg-surface-secondary border-input mb-8">
-          <CardHeader>
-            <CardTitle className="text-primary-content flex items-center gap-2">
-              <Edit className="h-5 w-5 text-primary" />
-              Manage Your Item
-            </CardTitle>
-            <CardDescription className="text-secondary-content">
-              You can edit your item details or mark it as unavailable.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Button
-                className="flex-1"
-                onClick={() => (window.location.href = `/edit-item/${item.id}`)}
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Item
-              </Button>
-
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={async () => {
-                  const action = item.active ? "mark as unavailable" : "mark as available";
-                  if (confirm(`Are you sure you want to ${action}? This will ${item.active ? "hide" : "show"} it ${item.active ? "from" : "to"} other users.`)) {
-                    try {
-                      const { updateItem } = await import("@/lib/listings-actions");
-                      const result = await updateItem(item.id, {
-                        title: item.title,
-                        description: item.description,
-                        imageUrl: item.imageUrl || "",
-                        tagIds: item.tags.map(tag => tag.id),
-                        repeatable: item.repeatable,
-                        active: !item.active,
-                      });
-
-                      if (result.success) {
-                        window.location.reload();
-                      } else {
-                        alert("Failed to update item status: " + (result.error || "Unknown error"));
-                      }
-                    } catch (error) {
-                      console.error("Error updating item status:", error);
-                      alert("Failed to update item status. Please try again.");
-                    }
-                  }
-                }}
-              >
-                {item.active ? "Mark as Unavailable" : "Mark as Available"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Creator's Item Notice */}
-      {isCreator && (
-        <Card className="bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800 mb-6">
-          <CardContent className="flex items-center p-4">
-            <User className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-2" />
-            <p className="text-blue-800 dark:text-blue-200">
-              This is your item. You can edit it using the controls above.
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Make Offer Section - Only show for non-creators */}
-      {item.active && !isCreator && (
+      {/* Make Offer Section */}
+      {item.active && (
         <Card className="bg-surface-secondary border-input">
           <CardHeader>
             <CardTitle className="text-primary-content flex items-center gap-2">
@@ -387,7 +328,8 @@ export default function ItemPage() {
               Make an Offer
             </CardTitle>
             <CardDescription className="text-secondary-content">
-              Select one of your items to offer in exchange, or create a new item to offer.
+              Select one of your items to offer in exchange, or create a new
+              item to offer.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -402,7 +344,10 @@ export default function ItemPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {userItems.map((userItem) => (
-                    <SelectItem key={userItem.id} value={userItem.id.toString()}>
+                    <SelectItem
+                      key={userItem.id}
+                      value={userItem.id.toString()}
+                    >
                       <div className="flex items-center gap-2">
                         <span>{userItem.title}</span>
                         <Badge variant="outline" className="text-xs">
@@ -425,7 +370,9 @@ export default function ItemPage() {
               <Button
                 className="flex-1"
                 onClick={handleMakeOffer}
-                disabled={!selectedItem || selectedItem === "none" || isSubmittingOffer}
+                disabled={
+                  !selectedItem || selectedItem === "none" || isSubmittingOffer
+                }
               >
                 {isSubmittingOffer ? (
                   <>
@@ -449,31 +396,12 @@ export default function ItemPage() {
         </Card>
       )}
 
-      {/* Inactive Item Notice */}
-      {!item.active && !isCreator && (
+      {!item.active && (
         <Card className="bg-surface-secondary border-input">
           <CardContent className="p-6 text-center">
             <p className="text-muted-content">
               This item is no longer available for offers.
             </p>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Inactive Item Notice for Creator */}
-      {!item.active && isCreator && (
-        <Card className="bg-orange-50 dark:bg-orange-900/30 border-orange-200 dark:border-orange-800">
-          <CardContent className="p-6 text-center">
-            <p className="text-orange-800 dark:text-orange-200">
-              Your item is currently marked as unavailable. You can reactivate it by editing the item.
-            </p>
-            <Button
-              className="mt-4"
-              onClick={() => (window.location.href = `/edit-item/${item.id}`)}
-            >
-              <Edit className="h-4 w-4 mr-2" />
-              Edit Item
-            </Button>
           </CardContent>
         </Card>
       )}
