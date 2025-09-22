@@ -166,7 +166,6 @@ export default function BrowseListingsPage() {
                 >
                   {listing.title}
                 </Link>
-                {/* {listing.title} */}
               </CardTitle>
               <CardDescription className="text-secondary-content">
                 {listing.description}
