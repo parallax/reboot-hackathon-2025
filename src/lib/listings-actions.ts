@@ -1,11 +1,11 @@
 "use server";
 
 import { db } from "@/db/index";
-import { Item, items, itemTags, userTags } from "@/db/schema";
+import { Item, items, itemTags, userTags, userReviews } from "@/db/schema";
 import { auth } from "@clerk/nextjs/server";
 import { createClerkClient } from "@clerk/backend";
 import { revalidatePath } from "next/cache";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc, sql, avg, and } from "drizzle-orm";
 import { embed } from 'ai'
 import { openai } from '@ai-sdk/openai'
 
@@ -267,8 +267,22 @@ export async function getItemById(itemId: number) {
         name: tagItem.tag?.name || "",
       }));
 
-    // Get user name from Clerk for the item creator
+    // Get average rating for the user from all their items' reviews
+    const ratingResult = await db
+      .select({
+        avgRating: avg(userReviews.value),
+        totalReviews: sql<number>`COUNT(${userReviews.id})`,
+      })
+      .from(userReviews)
+      .innerJoin(items, eq(userReviews.itemId, items.id))
+      .where(eq(items.userId, item.userId));
+
+    const averageRating = ratingResult[0]?.avgRating ? Number(ratingResult[0].avgRating) : null;
+    const totalReviews = ratingResult[0]?.totalReviews ? Number(ratingResult[0].totalReviews) : 0;
+
+    // Get user data from Clerk for the item creator
     let userName = "Unknown User";
+    let userImageUrl = null;
     try {
       const clerkClient = createClerkClient({
         secretKey: process.env.CLERK_SECRET_KEY!,
@@ -277,6 +291,7 @@ export async function getItemById(itemId: number) {
 
       if (user) {
         userName = user.firstName ?? "Unknown User";
+        userImageUrl = user.imageUrl || null;
       }
     } catch (error) {
       console.error("Error fetching user from Clerk:", error);
@@ -295,7 +310,10 @@ export async function getItemById(itemId: number) {
         active: item.active,
         userId: item.userId,
         userName: userName,
+        userImageUrl: userImageUrl,
         userLocation: item.userPreferences?.location,
+        averageRating: averageRating,
+        totalReviews: totalReviews,
         tags: tags,
       },
     };
