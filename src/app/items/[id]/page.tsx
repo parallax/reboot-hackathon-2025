@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useSearchParams } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 import { ArrowLeft, RefreshCcwDot, CheckCircle, User, Tag, Calendar } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,8 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { getItemById, getUserListings } from "@/lib/listings-actions";
+import { sendOfferEmail } from "@/actions/send-offer-email";
+import { createOffer } from "@/actions/offer-actions";
 
 interface ItemData {
   id: number;
@@ -46,12 +49,14 @@ interface UserItem {
 export default function ItemPage() {
   const params = useParams();
   const searchParams = useSearchParams();
+  const { user } = useUser();
   const [item, setItem] = useState<ItemData | null>(null);
   const [userItems, setUserItems] = useState<UserItem[]>([]);
   const [selectedItem, setSelectedItem] = useState<string>("");
   const [showSuccessMessage, setShowSuccessMessage] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
+  const [isSubmittingOffer, setIsSubmittingOffer] = useState<boolean>(false);
 
   // Get item ID from URL params
   const itemId = parseInt(params.id as string);
@@ -102,7 +107,7 @@ export default function ItemPage() {
     }
   }, [itemId]);
 
-  const handleMakeOffer = () => {
+  const handleMakeOffer = async () => {
     if (!item) {
       alert("Cannot make an offer on an item that doesn't exist");
       return;
@@ -113,12 +118,56 @@ export default function ItemPage() {
       return;
     }
 
-    // In a real app, this would create an offer in the database
-    console.log("Making offer:", {
-      itemId: item.id,
-      offeredItemId: selectedItem,
-    });
-    alert("Offer submitted successfully!");
+    if (!user?.id) {
+      alert("You must be logged in to make an offer");
+      return;
+    }
+
+    try {
+      setIsSubmittingOffer(true);
+      
+      // First, create the offer in the database
+      const offerResult = await createOffer({
+        itemId: item.id,
+        offeredItemId: parseInt(selectedItem),
+        offererUserId: user.id,
+        expiryDays: 7, // Offer expires in 7 days
+      });
+
+      if (!offerResult.success) {
+        alert(`Failed to create offer: ${offerResult.error}`);
+        return;
+      }
+
+      // Then send email notification to the item owner
+      const emailResult = await sendOfferEmail({
+        itemId: item.id,
+        offeredItemId: parseInt(selectedItem),
+        offerId: offerResult.data.offerId,
+        offererUserId: user.id,
+      });
+
+      if (emailResult.success) {
+        setShowSuccessMessage(true);
+        // Hide the success message after 5 seconds
+        setTimeout(() => {
+          setShowSuccessMessage(false);
+        }, 5000);
+      } else {
+        // Offer was created but email failed - still show success but warn about email
+        setShowSuccessMessage(true);
+        console.warn("Offer created but email notification failed:", emailResult.error);
+        // Hide the success message after 5 seconds
+        setTimeout(() => {
+          setShowSuccessMessage(false);
+        }, 5000);
+      }
+    } catch (error) {
+      console.error("Error making offer:", error);
+      alert("Failed to submit offer. Please try again.");
+    } finally {
+      setIsSubmittingOffer(false);
+    }
   };
 
   if (loading) {
@@ -137,11 +186,6 @@ export default function ItemPage() {
   if (error || !item) {
     return (
       <div className="flex flex-col min-h-screen bg-surface p-4">
-        <div className="flex items-center mb-6">
-          <RefreshCcwDot className="h-8 w-8 text-primary" />
-          <span className="ml-2 text-2xl font-bold font-brand text-primary">swapable</span>
-        </div>
-
         <Button
           variant="outline"
           className="mb-6 w-fit"
@@ -167,12 +211,6 @@ export default function ItemPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-surface p-4">
-      {/* Header */}
-      <div className="flex items-center mb-6">
-        <RefreshCcwDot className="h-8 w-8 text-primary" />
-        <span className="ml-2 text-2xl font-bold font-brand text-primary">swapable</span>
-      </div>
-
       <Button
         variant="outline"
         className="mb-6 w-fit"
@@ -182,13 +220,16 @@ export default function ItemPage() {
         Back to listings
       </Button>
 
-      {/* Success message when redirected from create listing */}
+      {/* Success message when redirected from create listing or offer submitted */}
       {showSuccessMessage && (
         <Card className="bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-800 mb-6">
           <CardContent className="flex items-center p-4">
             <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400 mr-2" />
             <p className="text-emerald-800 dark:text-emerald-200">
-              Your listing has been successfully created!
+              {searchParams.get("new") === "true" 
+                ? "Your listing has been successfully created!"
+                : "Your offer has been created and submitted successfully! The item owner will be notified by email."
+              }
             </p>
           </CardContent>
         </Card>
@@ -257,7 +298,7 @@ export default function ItemPage() {
             <div className="flex items-center gap-2">
               <User className="h-4 w-4 text-muted-content" />
               <span className="text-sm text-muted-content">
-                Posted by: {item.userName} from {item.userLocation}
+                Posted by: {item.userName} {item.userLocation ? `from ${item.userLocation}` : ""}
               </span>
             </div>
           </div>
@@ -311,9 +352,16 @@ export default function ItemPage() {
               <Button
                 className="flex-1"
                 onClick={handleMakeOffer}
-                disabled={!selectedItem || selectedItem === "none"}
+                disabled={!selectedItem || selectedItem === "none" || isSubmittingOffer}
               >
-                Make Offer
+                {isSubmittingOffer ? (
+                  <>
+                    <RefreshCcwDot className="h-4 w-4 mr-2 animate-spin" />
+                    Sending Offer...
+                  </>
+                ) : (
+                  "Make Offer"
+                )}
               </Button>
 
               <Button
