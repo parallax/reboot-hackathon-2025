@@ -87,6 +87,7 @@ export const offerHistory = pgTable("offer_history", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
   acceptedAt: timestamp("accepted_at"),
   rejectedAt: timestamp("rejected_at"),
+  rejectReason: text("reject_reason"),
 });
 
 // User reviews table
