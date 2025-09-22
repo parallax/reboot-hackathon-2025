@@ -238,11 +238,9 @@ export async function getItemById(itemId: number) {
         secretKey: process.env.CLERK_SECRET_KEY!,
       });
       const user = await clerkClient.users.getUser(item.userId);
+      
       if (user) {
-        userName =
-          user.firstName && user.lastName
-            ? `${user.firstName} ${user.lastName}`
-            : user.firstName || user.username || "Unknown User";
+        userName = user.firstName ?? "Unknown User";
       }
     } catch (error) {
       console.error("Error fetching user from Clerk:", error);
