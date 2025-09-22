@@ -86,13 +86,6 @@ export default function BrowseListingsPage() {
 
   return (
     <div className="flex flex-col bg-surface p-4">
-      <div className="flex items-center mb-6">
-        <RefreshCcwDot className="h-8 w-8 text-primary" />
-        <span className="ml-2 text-2xl font-bold font-brand text-primary">
-          swapable
-        </span>
-      </div>
-
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-primary-content mb-2">
           Browse Listings

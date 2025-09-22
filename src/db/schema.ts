@@ -16,8 +16,7 @@ export const tags = pgTable("tags", {
 
 // User preferences table
 export const userPreferences = pgTable("user_preferences", {
-  userId: text("user_id")
-    .primaryKey(),
+  userId: text("user_id").primaryKey(),
   location: text("location"),
   onboardingComplete: timestamp("onboarding_complete"),
 });
@@ -40,8 +39,7 @@ export const userTags = pgTable(
 // Items table
 export const items = pgTable("items", {
   id: serial("id").primaryKey(),
-  userId: text("user_id")
-    .notNull(),
+  userId: text("user_id").notNull(),
   active: boolean("active").notNull(),
   imageUrl: text("image_url"),
   title: text("title").notNull(),
@@ -87,8 +85,7 @@ export const offerHistory = pgTable("offer_history", {
 // User reviews table
 export const userReviews = pgTable("user_reviews", {
   id: serial("id").primaryKey(),
-  userId: text("user_id")
-    .notNull(),
+  userId: text("user_id").notNull(),
   itemId: integer("item_id")
     .references(() => items.id)
     .notNull(),

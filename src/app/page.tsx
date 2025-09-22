@@ -1,5 +1,27 @@
-import { HomeContent } from "@/components/home-content";
+import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
+import { eq } from "drizzle-orm";
 
-export default function Home() {
-  return <HomeContent />;
+import { LandingPage } from "@/components/landing-page";
+import { db } from "@/db";
+import { userPreferences } from "@/db/schema";
+
+export default async function Home() {
+  const { userId } = await auth();
+
+  if (userId) {
+    const [profile] = await db
+      .select({ onboardingComplete: userPreferences.onboardingComplete })
+      .from(userPreferences)
+      .where(eq(userPreferences.userId, userId))
+      .limit(1);
+
+    if (!profile?.onboardingComplete) {
+      redirect("/profile-setup");
+    }
+
+    redirect("/browse");
+  }
+
+  return <LandingPage />;
 }
