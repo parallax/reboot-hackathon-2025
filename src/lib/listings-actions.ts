@@ -5,7 +5,7 @@ import { Item, items, itemTags, userTags } from "@/db/schema";
 import { auth } from "@clerk/nextjs/server";
 import { createClerkClient } from "@clerk/backend";
 import { revalidatePath } from "next/cache";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import { embed } from 'ai'
 import { openai } from '@ai-sdk/openai'
 
@@ -431,3 +431,39 @@ export async function updateItem(
 
 // Alias for createListing to match the UI naming
 export const createItem = createListing;
+
+export async function searchItems(query: string) {
+  try {
+    if (!query.trim()) {
+      return []
+    }
+
+    // Generate embedding for the search query
+    const { embedding } = await embed({
+      model: openai.embedding('text-embedding-3-small'),
+      value: query.trim(),
+    })
+
+    // Use pgvector to find the closest items using cosine distance
+    const results = await db
+      .select({
+        id: items.id,
+        title: items.title,
+        description: items.description,
+        imageUrl: items.imageUrl,
+        repeatable: items.repeatable,
+        active: items.active,
+        userId: items.userId,
+        similarity: sql<number>`1 - (${items.embedding} <=> ${JSON.stringify(embedding)}::vector)`,
+      })
+      .from(items)
+      .where(eq(items.active, true))
+      .orderBy(sql`${items.embedding} <=> ${JSON.stringify(embedding)}::vector`)
+      .limit(10)
+
+    return results
+  } catch (error) {
+    console.error('Error searching items:', error)
+    throw new Error('Failed to search items')
+  }
+}

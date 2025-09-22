@@ -6,14 +6,18 @@ import {
   Plus,
   X,
   RefreshCcwDotIcon,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { DebugMenu } from "@/components/debug-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
+import { useDebounce } from "@/hooks/use-debounce";
+import { searchItemsAction } from "@/lib/search-actions";
 
 type HeaderProps = {
   debugEnabled?: boolean;
@@ -22,6 +26,13 @@ type HeaderProps = {
 export function Header({ debugEnabled = false }: HeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<Array<{id: number, title: string, description: string, similarity: number}>>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+  const router = useRouter();
+
+  const debouncedSearchQuery = useDebounce(searchQuery, 100);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -31,6 +42,56 @@ export function Header({ debugEnabled = false }: HeaderProps) {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Search effect
+  useEffect(() => {
+    const performSearch = async () => {
+      if (debouncedSearchQuery.trim().length > 0) {
+        setIsSearching(true);
+        try {
+          const results = await searchItemsAction(debouncedSearchQuery);
+          setSearchResults(results);
+          setShowResults(true);
+        } catch (error) {
+          console.error("Search error:", error);
+          setSearchResults([]);
+        } finally {
+          setIsSearching(false);
+        }
+      } else {
+        setSearchResults([]);
+        setShowResults(false);
+      }
+    };
+
+    performSearch();
+  }, [debouncedSearchQuery]);
+
+  const handleSearchInputChange = (value: string) => {
+    setSearchQuery(value);
+  };
+
+  const handleResultClick = (itemId: number) => {
+    setShowResults(false);
+    setSearchQuery("");
+    router.push(`/items/${itemId}`);
+  };
+
+
+  // Add click outside effect
+  useEffect(() => {
+    const handleClickOutsideEvent = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.search-container')) {
+        setShowResults(false);
+      }
+    };
+
+    if (showResults) {
+      document.addEventListener('click', handleClickOutsideEvent);
+      return () => document.removeEventListener('click', handleClickOutsideEvent);
+    }
+  }, [showResults]);
 
   return (
     <header
@@ -68,12 +129,47 @@ export function Header({ debugEnabled = false }: HeaderProps) {
           <div className="flex-1 flex justify-end">
             {/* Search bar - hidden on mobile, shown on tablet+ */}
             <div className="hidden md:flex max-w-md mx-4">
-              <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <div className="relative w-full search-container">
+                {isSearching ? (
+                  <Loader2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4 animate-spin" />
+                ) : (
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                )}
                 <Input
                   placeholder="Search listings..."
-                  className="pl-10 bg-surface-secondary border-border focus:border-emerald-500 focus:ring-emerald-500/20"
+                  value={searchQuery}
+                  onChange={(e) => handleSearchInputChange(e.target.value)}
+                  className="pl-10 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:border-emerald-500 focus:ring-emerald-500/20 shadow-sm"
                 />
+
+                {/* Search Results Dropdown */}
+                {showResults && searchResults.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-50 max-h-96 overflow-y-auto">
+                    {searchResults.map((item) => (
+                      <div
+                        key={item.id}
+                        onClick={() => handleResultClick(item.id)}
+                        className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer border-b border-gray-100 dark:border-gray-700 last:border-b-0 transition-colors duration-150"
+                      >
+                        <div className="font-medium text-gray-900 dark:text-white">{item.title}</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-300 truncate">
+                          {item.description}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          Similarity: {(item.similarity * 100).toFixed(1)}%
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {showResults && searchResults.length === 0 && searchQuery.trim() && !isSearching && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-50">
+                    <div className="px-4 py-3 text-gray-600 dark:text-gray-300">
+                      No items found for &ldquo;{searchQuery}&rdquo;
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -177,12 +273,47 @@ export function Header({ debugEnabled = false }: HeaderProps) {
 
         {/* Mobile search bar */}
         <div className="md:hidden pb-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <div className="relative search-container">
+            {isSearching ? (
+              <Loader2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4 animate-spin" />
+            ) : (
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            )}
             <Input
               placeholder="Search listings..."
-              className="pl-10 bg-surface-secondary border-border focus:border-emerald-500 focus:ring-emerald-500/20"
+              value={searchQuery}
+              onChange={(e) => handleSearchInputChange(e.target.value)}
+              className="pl-10 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:border-emerald-500 focus:ring-emerald-500/20 shadow-sm"
             />
+
+            {/* Mobile Search Results Dropdown */}
+            {showResults && searchResults.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-50 max-h-64 overflow-y-auto">
+                {searchResults.map((item) => (
+                  <div
+                    key={item.id}
+                    onClick={() => handleResultClick(item.id)}
+                    className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer border-b border-gray-100 dark:border-gray-700 last:border-b-0 transition-colors duration-150"
+                  >
+                    <div className="font-medium text-gray-900 dark:text-white">{item.title}</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-300 truncate">
+                      {item.description}
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Similarity: {(item.similarity * 100).toFixed(1)}%
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {showResults && searchResults.length === 0 && searchQuery.trim() && !isSearching && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-50">
+                <div className="px-4 py-3 text-gray-600 dark:text-gray-300">
+                  No items found for &ldquo;{searchQuery}&rdquo;
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
