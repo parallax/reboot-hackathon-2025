@@ -1,10 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -33,16 +31,11 @@ type ProfileSetupFormProps = {
   onSubmit: (payload: ProfileSetupInput) => Promise<ProfileSetupResult>;
 };
 
-const profileSetupSchema = z.object({
-  location: z
-    .string()
-    .default("")
-    .transform((value) => value.trim()),
-  interestedIds: z.array(z.number()).default([]),
-  offerIds: z.array(z.number()).default([]),
-});
-
-type ProfileSetupFormValues = z.infer<typeof profileSetupSchema>;
+type ProfileSetupFormValues = {
+  location: string;
+  interestedIds: string[];
+  offerIds: string[];
+};
 
 export function ProfileSetupForm({
   tags,
@@ -52,60 +45,50 @@ export function ProfileSetupForm({
   onSubmit,
 }: ProfileSetupFormProps) {
   const router = useRouter();
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
+
+  const toNumericIds = (ids: string[]) =>
+    ids
+      .map((id) => Number.parseInt(id, 10))
+      .filter((value) => Number.isFinite(value));
+
   const tagOptions = useMemo(
-    () => tags.map((tag) => ({ value: tag.id, label: tag.name })),
+    () => tags.map((tag) => ({ value: tag.id.toString(), label: tag.name })),
     [tags]
   );
 
   const form = useForm<ProfileSetupFormValues>({
-    resolver: zodResolver(profileSetupSchema),
     defaultValues: {
       location: initialLocation,
-      interestedIds: initialInterested,
-      offerIds: initialOffers,
+      interestedIds: initialInterested.map((id) => id.toString()),
+      offerIds: initialOffers.map((id) => id.toString()),
     },
   });
 
   const handleSubmit = form.handleSubmit(async (values) => {
-    if (
-      !values.location &&
-      values.interestedIds.length === 0 &&
-      values.offerIds.length === 0
-    ) {
-      form.setError("root", {
-        type: "manual",
-        message: "Add a location or select at least one tag to continue.",
-      });
-      return;
-    }
-
-    form.clearErrors("root");
+    setSubmissionError(null);
 
     try {
       const result = await onSubmit({
         location: values.location,
-        interestedTagIds: values.interestedIds,
-        offerTagIds: values.offerIds,
+        interestedTagIds: toNumericIds(values.interestedIds),
+        offerTagIds: toNumericIds(values.offerIds),
       });
 
       if (!result.success) {
-        form.setError("root", {
-          type: "server",
-          message:
-            result.error ?? "Failed to save your profile. Please try again.",
-        });
+        setSubmissionError(
+          result.error ?? "Failed to save your profile. Please try again."
+        );
         return;
       }
 
       router.push("/browse");
-    } catch (submissionError) {
-      form.setError("root", {
-        type: "server",
-        message:
-          submissionError instanceof Error
-            ? submissionError.message
-            : "Something went wrong while saving your profile.",
-      });
+    } catch (error) {
+      setSubmissionError(
+        error instanceof Error
+          ? error.message
+          : "Something went wrong while saving your profile."
+      );
     }
   });
 
@@ -142,10 +125,11 @@ export function ProfileSetupForm({
               <FormControl>
                 <MultiSelect
                   options={tagOptions}
-                  value={field.value ?? []}
-                  onChange={field.onChange}
-                  placeholder="Select the skills or items you&apos;re seeking"
-                  emptyMessage="No tags match your search"
+                  defaultValue={field.value ?? []}
+                  onValueChange={field.onChange}
+                  placeholder="Select the skills or items you're seeking"
+                  emptyIndicator="No tags match your search"
+                  hideSelectAll
                 />
               </FormControl>
               <FormMessage />
@@ -162,10 +146,11 @@ export function ProfileSetupForm({
               <FormControl>
                 <MultiSelect
                   options={tagOptions}
-                  value={field.value ?? []}
-                  onChange={field.onChange}
+                  defaultValue={field.value ?? []}
+                  onValueChange={field.onChange}
                   placeholder="Choose what you can provide"
-                  emptyMessage="No tags match your search"
+                  emptyIndicator="No tags match your search"
+                  hideSelectAll
                 />
               </FormControl>
               <FormMessage />
@@ -173,10 +158,8 @@ export function ProfileSetupForm({
           )}
         />
 
-        {form.formState.errors.root?.message && (
-          <p className="text-sm text-destructive">
-            {form.formState.errors.root.message}
-          </p>
+        {submissionError && (
+          <p className="text-sm text-destructive">{submissionError}</p>
         )}
 
         <Button

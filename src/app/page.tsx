@@ -4,16 +4,16 @@ import { eq } from "drizzle-orm";
 
 import { LandingPage } from "@/components/landing-page";
 import { db } from "@/db";
-import { users } from "@/db/schema";
+import { userPreferences } from "@/db/schema";
 
 export default async function Home() {
   const { userId } = await auth();
 
   if (userId) {
     const [profile] = await db
-      .select({ onboardingComplete: users.onboardingComplete })
-      .from(users)
-      .where(eq(users.id, userId))
+      .select({ onboardingComplete: userPreferences.onboardingComplete })
+      .from(userPreferences)
+      .where(eq(userPreferences.userId, userId))
       .limit(1);
 
     if (!profile?.onboardingComplete) {

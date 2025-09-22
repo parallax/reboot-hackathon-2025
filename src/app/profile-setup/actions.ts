@@ -5,7 +5,7 @@ import { auth } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
 
 import { db } from "@/db";
-import { userTags, users } from "@/db/schema";
+import { userPreferences, userTags } from "@/db/schema";
 
 export type ProfileSetupInput = {
   location: string;
@@ -55,14 +55,14 @@ export async function submitProfileSetup(
 
   await db.transaction(async (tx) => {
     await tx
-      .insert(users)
+      .insert(userPreferences)
       .values({
-        id: userId,
+        userId,
         location: location || null,
         onboardingComplete: completedAt,
       })
       .onConflictDoUpdate({
-        target: users.id,
+        target: userPreferences.userId,
         set: {
           location: location || null,
           onboardingComplete: completedAt,

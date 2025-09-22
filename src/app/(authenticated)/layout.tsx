@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 
 import { db } from "@/db";
-import { users } from "@/db/schema";
+import { userPreferences } from "@/db/schema";
 
 type AuthenticatedLayoutProps = {
   children: ReactNode;
@@ -20,9 +20,9 @@ export default async function AuthenticatedLayout({
   }
 
   const existing = await db
-    .select({ onboardingComplete: users.onboardingComplete })
-    .from(users)
-    .where(eq(users.id, userId))
+    .select({ onboardingComplete: userPreferences.onboardingComplete })
+    .from(userPreferences)
+    .where(eq(userPreferences.userId, userId))
     .limit(1);
 
   if (!existing[0]?.onboardingComplete) {
