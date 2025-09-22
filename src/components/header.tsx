@@ -1,6 +1,14 @@
 "use client";
-import { Search, Menu, RefreshCcwDot, Plus } from "lucide-react";
+import {
+  Search,
+  Menu,
+  RefreshCcwDot,
+  Plus,
+  X,
+  RefreshCcwDotIcon,
+} from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 import { DebugMenu } from "@/components/debug-menu";
 import { Button } from "@/components/ui/button";
@@ -12,12 +20,37 @@ type HeaderProps = {
 };
 
 export function Header({ debugEnabled = false }: HeaderProps) {
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
-    <header className="sticky top-0 z-50 bg-surface border-b border-border backdrop-blur-sm bg-surface/95">
+    <header
+      className={`sticky top-0 z-50 border-b border-border backdrop-blur-sm transition-all duration-200 ${
+        isScrolled ? "bg-white/95 dark:bg-gray-900/95" : "bg-surface/95"
+      }`}
+    >
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          <Button variant="ghost" size="icon" className="md:hidden">
-            <Menu className="h-5 w-5" />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            {isMobileMenuOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Menu className="h-5 w-5" />
+            )}
           </Button>
 
           <Link
@@ -46,6 +79,17 @@ export function Header({ debugEnabled = false }: HeaderProps) {
 
             {/* Navigation icons */}
             <div className="flex items-center">
+              {/* Desktop Offers Link */}
+              <Link href="/offers" className="hidden md:block">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="mr-2 text-primary-content hover:bg-surface-secondary"
+                >
+                  Offers
+                </Button>
+              </Link>
+
               <Link href="/create-item">
                 <Button
                   variant="default"
@@ -90,6 +134,38 @@ export function Header({ debugEnabled = false }: HeaderProps) {
             </div>
           </div>
         </div>
+
+        {/* Mobile Menu Dropdown */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden border-t border-border bg-surface-secondary">
+            <div className="px-4 py-4 space-y-3">
+              <Link
+                href="/offers"
+                className="flex items-center gap-3 px-3 py-2 text-primary-content hover:bg-surface rounded-md transition-colors"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <RefreshCcwDotIcon className="h-4 w-4" />
+                My Offers
+              </Link>
+              <Link
+                href="/browse"
+                className="flex items-center gap-3 px-3 py-2 text-primary-content hover:bg-surface rounded-md transition-colors"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <Search className="h-4 w-4" />
+                Browse Listings
+              </Link>
+              <Link
+                href="/create-item"
+                className="flex items-center gap-3 px-3 py-2 text-primary-content hover:bg-surface rounded-md transition-colors"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <Plus className="h-4 w-4" />
+                Create Listing
+              </Link>
+            </div>
+          </div>
+        )}
 
         {/* Mobile search bar */}
         <div className="md:hidden pb-4">
