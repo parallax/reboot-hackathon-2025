@@ -1,9 +1,3 @@
----
-description:
-globs:
-alwaysApply: true
----
-
 Swapable App
 
 Hackathon Brief
