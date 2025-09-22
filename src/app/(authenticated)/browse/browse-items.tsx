@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { RefreshCcwDot } from "lucide-react";
 import { MultiSelect } from "@/components/ui/multi-select";
 import {
   Card,
