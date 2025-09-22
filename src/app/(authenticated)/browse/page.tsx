@@ -24,6 +24,7 @@ export default async function Page(props: PageProps<"/browse">) {
   const [listingsResult, tags] = await Promise.all([
     getActiveListings({
       selectedCategories,
+      excludeCurrentUser: true,
     }),
     getTags(),
   ]);
