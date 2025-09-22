@@ -317,7 +317,7 @@ export default function ItemPage() {
               <Button
                 variant="outline"
                 className="flex-1"
-                onClick={() => (window.location.href = "/create-listing")}
+                onClick={() => (window.location.href = "/create-item")}
               >
                 Create New Item to Offer
               </Button>

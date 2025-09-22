@@ -36,7 +36,7 @@ export function MarketingLanding() {
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
               <Link href="/browse">
-                <Button variant="default" size="lg" className="w-full sm:w-auto shadow-md hover:shadow-lg">I'm looking for something</Button>
+                <Button variant="default" size="lg" className="w-full sm:w-auto shadow-md hover:shadow-lg">I&apos;m looking for something</Button>
               </Link>
               <Link href="/sign-in">
                 <Button variant="default" size="lg" className="w-full sm:w-auto shadow-md hover:shadow-lg">I have something to offer</Button>
