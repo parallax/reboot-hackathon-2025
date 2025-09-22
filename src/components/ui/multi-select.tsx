@@ -628,7 +628,7 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
     ) => {
       if (event.key === "Enter") {
         setIsPopoverOpen(true);
-      } else if (event.key === "Backspace" && !event.currentTarget.value) {
+      } else if (event.key === "Backspace" && !event.currentTarget.value && !isControlled) {
         const newSelectedValues = [...selectedValues];
         newSelectedValues.pop();
         setSelectedValues(newSelectedValues);
@@ -662,7 +662,7 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
     };
 
     const clearExtraOptions = () => {
-      if (disabled) return;
+      if (disabled || isControlled) return;
       const newSelectedValues = selectedValues.slice(
         0,
         responsiveSettings.maxCount
@@ -672,7 +672,7 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
     };
 
     const toggleAll = () => {
-      if (disabled) return;
+      if (disabled || isControlled) return;
       const allOptions = getAllOptions().filter((option) => !option.disabled);
       if (selectedValues.length === allOptions.length) {
         handleClear();
