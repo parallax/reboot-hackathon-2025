@@ -1,5 +1,4 @@
 import { auth } from "@clerk/nextjs/server";
-import { RefreshCcwDot } from "lucide-react";
 import { redirect } from "next/navigation";
 import { asc, eq } from "drizzle-orm";
 
@@ -26,7 +25,10 @@ export default async function ProfileSetupPage() {
       .from(userTags)
       .where(eq(userTags.userId, userId)),
     db
-      .select({ location: users.location, onboardingComplete: users.onboardingComplete })
+      .select({
+        location: users.location,
+        onboardingComplete: users.onboardingComplete,
+      })
       .from(users)
       .where(eq(users.id, userId))
       .limit(1),
@@ -48,13 +50,10 @@ export default async function ProfileSetupPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-surface p-4">
-      <div className="flex items-center mb-6">
-        <RefreshCcwDot className="h-8 w-8 text-primary" />
-        <span className="ml-2 text-2xl font-bold font-brand text-primary">swapable</span>
-      </div>
-
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-primary-content mb-2">Profile Setup</h1>
+        <h1 className="text-2xl font-bold text-primary-content mb-2">
+          Profile Setup
+        </h1>
         <p className="text-muted-content">
           Tell us what you&apos;re interested in and what you can offer
         </p>
