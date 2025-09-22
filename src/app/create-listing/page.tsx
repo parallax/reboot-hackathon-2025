@@ -10,7 +10,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from "@/components/ui/select";
 
 // Mock categories for the listing
@@ -22,7 +22,7 @@ const categories = [
   { value: "workspace", label: "Workspace" },
   { value: "equipment", label: "Equipment" },
   { value: "services", label: "Services" },
-  { value: "products", label: "Products" }
+  { value: "products", label: "Products" },
 ];
 
 export default function CreateListingPage() {
@@ -64,7 +64,13 @@ export default function CreateListingPage() {
       // Simulate API call delay
       setTimeout(() => {
         // In a real app, this would save the listing to the database
-        console.log("Listing data:", { title, description, category, imageUrl, repeatable });
+        console.log("Listing data:", {
+          title,
+          description,
+          category,
+          imageUrl,
+          repeatable,
+        });
 
         // Move to complete stage
         setStage("complete");
@@ -83,8 +89,12 @@ export default function CreateListingPage() {
       <div className="flex flex-col items-center justify-center min-h-screen bg-surface p-4">
         <div className="flex flex-col items-center">
           <RefreshCcwDot className="h-16 w-16 text-primary animate-spin" />
-          <h2 className="text-2xl font-bold font-brand text-primary-content mt-4">Creating your listing...</h2>
-          <p className="text-muted-content mt-2">Please wait while we set up your offer</p>
+          <h2 className="text-2xl font-bold font-brand text-primary-content mt-4">
+            Creating your listing...
+          </h2>
+          <p className="text-muted-content mt-2">
+            Please wait while we set up your offer
+          </p>
         </div>
       </div>
     );
@@ -98,12 +108,22 @@ export default function CreateListingPage() {
             <RefreshCcwDot className="h-16 w-16 text-primary animate-pulse" />
             <CheckCircle className="h-8 w-8 text-green-500 absolute -bottom-2 -right-2 bg-surface rounded-full" />
           </div>
-          <h2 className="text-2xl font-bold font-brand text-primary-content mt-4">Listing Created!</h2>
-          <p className="text-muted-content mt-2">Your offer has been successfully added to the community</p>
+          <h2 className="text-2xl font-bold font-brand text-primary-content mt-4">
+            Listing Created!
+          </h2>
+          <p className="text-muted-content mt-2">
+            Your offer has been successfully added to the community
+          </p>
           <div className="mt-6 flex space-x-2">
             <div className="h-3 w-3 bg-primary rounded-full animate-bounce"></div>
-            <div className="h-3 w-3 bg-primary rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
-            <div className="h-3 w-3 bg-primary rounded-full animate-bounce" style={{ animationDelay: "0.4s" }}></div>
+            <div
+              className="h-3 w-3 bg-primary rounded-full animate-bounce"
+              style={{ animationDelay: "0.2s" }}
+            ></div>
+            <div
+              className="h-3 w-3 bg-primary rounded-full animate-bounce"
+              style={{ animationDelay: "0.4s" }}
+            ></div>
           </div>
         </div>
       </div>
@@ -112,14 +132,13 @@ export default function CreateListingPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-surface p-4">
-      <div className="flex items-center mb-6">
-        <RefreshCcwDot className="h-8 w-8 text-primary" />
-        <span className="ml-2 text-2xl font-bold font-brand text-primary">swapable</span>
-      </div>
-
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-primary-content mb-2">Create Listing</h1>
-        <p className="text-muted-content">Share what you can offer with the community</p>
+        <h1 className="text-2xl font-bold text-primary-content mb-2">
+          Create Listing
+        </h1>
+        <p className="text-muted-content">
+          Share what you can offer with the community
+        </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -133,7 +152,9 @@ export default function CreateListingPage() {
             onChange={(e) => setTitle(e.target.value)}
             placeholder="What are you offering?"
           />
-          {errors.title && <p className="text-destructive text-sm mt-1">{errors.title}</p>}
+          {errors.title && (
+            <p className="text-destructive text-sm mt-1">{errors.title}</p>
+          )}
         </div>
 
         {/* Description */}
@@ -146,7 +167,11 @@ export default function CreateListingPage() {
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Describe what you're offering in detail"
           />
-          {errors.description && <p className="text-destructive text-sm mt-1">{errors.description}</p>}
+          {errors.description && (
+            <p className="text-destructive text-sm mt-1">
+              {errors.description}
+            </p>
+          )}
         </div>
 
         {/* Image URL */}
@@ -178,7 +203,9 @@ export default function CreateListingPage() {
               ))}
             </SelectContent>
           </Select>
-          {errors.category && <p className="text-destructive text-sm mt-1">{errors.category}</p>}
+          {errors.category && (
+            <p className="text-destructive text-sm mt-1">{errors.category}</p>
+          )}
         </div>
 
         {/* Repeatable */}

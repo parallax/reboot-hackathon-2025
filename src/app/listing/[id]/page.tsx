@@ -2,21 +2,20 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import { RefreshCcwDot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle
+  CardTitle,
 } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from "@/components/ui/select";
 import { CheckCircle } from "lucide-react";
 
@@ -25,40 +24,43 @@ const mockListings = [
   {
     id: 1,
     title: "Web Design Services",
-    description: "Professional web design and development services for small businesses. I can help you create a modern, responsive website that will help your business stand out online. Services include UI/UX design, front-end development, and consultation.",
+    description:
+      "Professional web design and development services for small businesses. I can help you create a modern, responsive website that will help your business stand out online. Services include UI/UX design, front-end development, and consultation.",
     category: "design",
     userId: "user1",
     active: true,
     repeatable: true,
-    imageUrl: null
+    imageUrl: null,
   },
   {
     id: 2,
     title: "Marketing Consultation",
-    description: "Expert marketing advice for startups and growing businesses. I can help you develop a marketing strategy, create content, and improve your online presence.",
+    description:
+      "Expert marketing advice for startups and growing businesses. I can help you develop a marketing strategy, create content, and improve your online presence.",
     category: "marketing",
     userId: "user2",
     active: true,
     repeatable: true,
-    imageUrl: null
+    imageUrl: null,
   },
   {
     id: 3,
     title: "Office Space",
-    description: "Shared office space available for freelancers and small teams. Fully equipped with desks, chairs, and high-speed internet.",
+    description:
+      "Shared office space available for freelancers and small teams. Fully equipped with desks, chairs, and high-speed internet.",
     category: "workspace",
     userId: "user3",
     active: true,
     repeatable: false,
-    imageUrl: null
-  }
+    imageUrl: null,
+  },
 ];
 
 // Mock user's items they can offer in return
 const userItems = [
   { id: 2, title: "Marketing Consultation" },
   { id: 3, title: "Office Space" },
-  { id: 4, title: "Software Development" }
+  { id: 4, title: "Software Development" },
 ];
 
 export default function ListingPage() {
@@ -71,11 +73,11 @@ export default function ListingPage() {
   const listingId = parseInt(params.id as string);
 
   // Find the listing based on ID
-  const listing = mockListings.find(listing => listing.id === listingId);
+  const listing = mockListings.find((listing) => listing.id === listingId);
 
   useEffect(() => {
     // Check if we're redirected from create listing page
-    if (searchParams.get('new') === 'true') {
+    if (searchParams.get("new") === "true") {
       setShowSuccessMessage(true);
       // Hide the success message after 3 seconds
       const timer = setTimeout(() => {
@@ -97,19 +99,21 @@ export default function ListingPage() {
     }
 
     // In a real app, this would create an offer in the database
-    console.log("Making offer:", { listingId: listing.id, offeredItemId: selectedItem });
+    console.log("Making offer:", {
+      listingId: listing.id,
+      offeredItemId: selectedItem,
+    });
     alert("Offer submitted successfully!");
   };
 
   return (
     <div className="flex flex-col min-h-screen bg-surface p-4">
-      <div className="flex items-center mb-6">
-        <RefreshCcwDot className="h-8 w-8 text-primary" />
-        <span className="ml-2 text-2xl font-bold font-brand text-primary">swapable</span>
-      </div>
-
       <div className="mb-6">
-        <Button variant="outline" className="mb-4" onClick={() => window.history.back()}>
+        <Button
+          variant="outline"
+          className="mb-4"
+          onClick={() => window.history.back()}
+        >
           ← Back to listings
         </Button>
       </div>
@@ -130,7 +134,9 @@ export default function ListingPage() {
       {listing ? (
         <Card className="bg-surface-secondary border-input mb-8">
           <CardHeader>
-            <CardTitle className="text-primary-content">{listing.title}</CardTitle>
+            <CardTitle className="text-primary-content">
+              {listing.title}
+            </CardTitle>
             <CardDescription className="text-secondary-content">
               {listing.description}
             </CardDescription>
@@ -138,21 +144,27 @@ export default function ListingPage() {
           <CardContent>
             <div className="flex items-center mb-4">
               <span className="bg-primary text-primary-foreground text-xs px-2 py-1 rounded">
-                {listing.category.charAt(0).toUpperCase() + listing.category.slice(1)}
+                {listing.category.charAt(0).toUpperCase() +
+                  listing.category.slice(1)}
               </span>
               <span className="ml-2 text-xs text-muted-content">
                 {listing.repeatable ? "Repeatable" : "One-off"}
               </span>
             </div>
-            <p className="text-sm text-muted-content">Posted by: {listing.userId}</p>
+            <p className="text-sm text-muted-content">
+              Posted by: {listing.userId}
+            </p>
           </CardContent>
         </Card>
       ) : (
         <Card className="bg-surface-secondary border-input mb-8">
           <CardHeader>
-            <CardTitle className="text-primary-content">Listing Not Found</CardTitle>
+            <CardTitle className="text-primary-content">
+              Listing Not Found
+            </CardTitle>
             <CardDescription className="text-secondary-content">
-              The listing you&apos;re looking for doesn&apos;t exist or has been removed.
+              The listing you&apos;re looking for doesn&apos;t exist or has been
+              removed.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -161,9 +173,12 @@ export default function ListingPage() {
       {/* Make Offer Section */}
       {listing && (
         <div className="mb-8">
-          <h2 className="text-xl font-bold text-primary-content mb-4">Make an Offer</h2>
+          <h2 className="text-xl font-bold text-primary-content mb-4">
+            Make an Offer
+          </h2>
           <p className="text-secondary-content mb-4">
-            Select one of your items to offer in exchange, or create a new item to offer.
+            Select one of your items to offer in exchange, or create a new item
+            to offer.
           </p>
 
           {/* Select Item to Offer */}
@@ -187,14 +202,17 @@ export default function ListingPage() {
 
           {/* Offer Buttons */}
           <div className="space-y-4">
-            <Button className="w-full py-6 body-large" onClick={handleMakeOffer}>
+            <Button
+              className="w-full py-6 body-large"
+              onClick={handleMakeOffer}
+            >
               Make Offer
             </Button>
 
             <Button
               variant="outline"
               className="w-full py-6 body-large"
-              onClick={() => window.location.href = "/create-listing"}
+              onClick={() => (window.location.href = "/create-listing")}
             >
               Create New Item to Offer
             </Button>
