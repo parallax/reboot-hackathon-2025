@@ -32,7 +32,7 @@ export function Header({ debugEnabled = false }: HeaderProps) {
   const [showResults, setShowResults] = useState(false);
   const router = useRouter();
 
-  const debouncedSearchQuery = useDebounce(searchQuery, 100);
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   useEffect(() => {
     const handleScroll = () => {
