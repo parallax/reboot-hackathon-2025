@@ -122,6 +122,58 @@ export default function BrowseListingsPage() {
         <p className="text-muted-content">
           Find what you need from local businesses
         </p>
+        <h1 className="text-2xl font-bold text-primary-content mb-2">
+          Browse Listings
+        </h1>
+        <p className="text-muted-content">
+          Find what you need from local businesses
+        </p>
+      </div>
+
+      {/* Recommended Offers Section */}
+      <div className="mb-8">
+        <h2 className="text-xl font-bold text-primary-content mb-4">
+          Recommended Offers
+        </h2>
+        {mockRecommendedOffers.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {mockRecommendedOffers.map((offer) => (
+              <Card
+                key={offer.id}
+                className="bg-surface-secondary border-input"
+              >
+                <div className="relative h-48 w-full">
+                  <Image
+                    src={offer.imageUrl}
+                    alt={offer.title}
+                    fill
+                    className="object-cover rounded-t-lg"
+                  />
+                </div>
+                <CardHeader>
+                  <CardTitle className="text-primary-content">
+                    {offer.title}
+                  </CardTitle>
+                  <CardDescription className="text-secondary-content">
+                    {offer.description}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center">
+                    <span className="bg-primary text-primary-foreground text-xs px-2 py-1 rounded">
+                      {offer.category.charAt(0).toUpperCase() +
+                        offer.category.slice(1)}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <p className="text-muted-content">
+            No recommended offers at this time
+          </p>
+        )}
       </div>
 
       {/* Category Filter Dropdown */}
