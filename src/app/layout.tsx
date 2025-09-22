@@ -26,13 +26,18 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const debugEnvValue = process.env.DEBUG_MODE;
+  const debugEnabled =
+    typeof debugEnvValue === "string" &&
+    ["1", "true", "yes", "on"].includes(debugEnvValue.trim().toLowerCase());
+
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ClerkProvider>
-          <Header />
+          <Header debugEnabled={debugEnabled} />
           <main className="min-h-screen">{children}</main>
           <Footer />
         </ClerkProvider>
