@@ -238,7 +238,7 @@ export async function getItemById(itemId: number) {
         secretKey: process.env.CLERK_SECRET_KEY!,
       });
       const user = await clerkClient.users.getUser(item.userId);
-      
+
       if (user) {
         userName = user.firstName ?? "Unknown User";
       }
@@ -259,7 +259,7 @@ export async function getItemById(itemId: number) {
         active: item.active,
         userId: item.userId,
         userName: userName,
-        userLocation: item.userLocation || "Location not specified",
+        userLocation: item.userLocation,
         tags: itemTags_list,
       },
     };
