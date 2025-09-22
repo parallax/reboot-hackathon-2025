@@ -110,6 +110,10 @@ export default async function Page({ params }: OffersPageProps) {
     notFound();
   }
 
+  const viewerIsOfferer = offersVisibleToUser.some(
+    (offer) => offer.offeredOwnerId === userId
+  );
+
   const payload: OfferDetailViewProps = {
     item: {
       id: listing.id,
@@ -134,8 +138,10 @@ export default async function Page({ params }: OffersPageProps) {
           }
         : null,
       rejectionReason: offer.rejectReason ?? null,
+      offeredByViewer: offer.offeredOwnerId === userId,
     })),
     viewerIsOwner: isListingOwner,
+    viewerIsOfferer,
   };
 
   return <OfferDetailView {...payload} />;
