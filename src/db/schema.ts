@@ -8,13 +8,6 @@ import {
   primaryKey,
 } from "drizzle-orm/pg-core";
 
-// Users table (referenced by Clerk)
-export const users = pgTable("users", {
-  id: text("id").primaryKey(),
-  location: text("location"),
-  onboardingComplete: timestamp("onboarding_complete"),
-});
-
 // Tags table
 export const tags = pgTable("tags", {
   id: serial("id").primaryKey(),
@@ -23,9 +16,7 @@ export const tags = pgTable("tags", {
 
 // User preferences table
 export const userPreferences = pgTable("user_preferences", {
-  userId: text("user_id")
-    .references(() => users.id)
-    .primaryKey(),
+  userId: text("user_id"),
   location: text("location"),
   onboardingComplete: timestamp("onboarding_complete"),
 });
@@ -34,7 +25,7 @@ export const userPreferences = pgTable("user_preferences", {
 export const userTags = pgTable(
   "user_tags",
   {
-    userId: text("user_id").references(() => users.id),
+    userId: text("user_id"),
     isOffer: boolean("is_offer").notNull(),
     tagId: integer("tag_id").references(() => tags.id),
   },
@@ -48,9 +39,7 @@ export const userTags = pgTable(
 // Items table
 export const items = pgTable("items", {
   id: serial("id").primaryKey(),
-  userId: text("user_id")
-    .references(() => users.id)
-    .notNull(),
+  userId: text("user_id"),
   active: boolean("active").notNull(),
   imageUrl: text("image_url"),
   title: text("title").notNull(),
@@ -96,9 +85,7 @@ export const offerHistory = pgTable("offer_history", {
 // User reviews table
 export const userReviews = pgTable("user_reviews", {
   id: serial("id").primaryKey(),
-  userId: text("user_id")
-    .references(() => users.id)
-    .notNull(),
+  userId: text("user_id"),
   itemId: integer("item_id")
     .references(() => items.id)
     .notNull(),

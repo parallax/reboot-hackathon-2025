@@ -1,8 +1,6 @@
 "use client";
 
 import { RefreshCcwDot } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import { LinkButton } from "@/components/ui/linkButton";
 
 export function LandingPage() {

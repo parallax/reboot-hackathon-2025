@@ -33,6 +33,7 @@ export default function CreateListingPage() {
   const [imageUrl, setImageUrl] = useState<string>("");
   const [repeatable, setRepeatable] = useState<boolean>(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [newListingId, setNewListingId] = useState<number>(1);
 
   const validateForm = () => {

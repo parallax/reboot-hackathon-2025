@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { asc, eq } from "drizzle-orm";
 
 import { db } from "@/db";
-import { tags, userTags, users } from "@/db/schema";
+import { tags, userTags, userPreferences } from "@/db/schema";
 
 import { ProfileSetupForm } from "./profile-setup-form";
 import { submitProfileSetup } from "./actions";
@@ -26,11 +26,11 @@ export default async function ProfileSetupPage() {
       .where(eq(userTags.userId, userId)),
     db
       .select({
-        location: users.location,
-        onboardingComplete: users.onboardingComplete,
+        location: userPreferences.location,
+        onboardingComplete: userPreferences.onboardingComplete,
       })
-      .from(users)
-      .where(eq(users.id, userId))
+      .from(userPreferences)
+      .where(eq(userPreferences.userId, userId))
       .limit(1),
   ]);
 

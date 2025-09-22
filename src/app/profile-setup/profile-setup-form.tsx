@@ -1,9 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { MultiSelect } from "@/components/ui/multi-select";
 import type { ProfileSetupInput, ProfileSetupResult } from "./actions";
@@ -21,6 +33,17 @@ type ProfileSetupFormProps = {
   onSubmit: (payload: ProfileSetupInput) => Promise<ProfileSetupResult>;
 };
 
+const profileSetupSchema = z.object({
+  location: z
+    .string()
+    .default("")
+    .transform((value) => value.trim()),
+  interestedIds: z.array(z.number()).default([]),
+  offerIds: z.array(z.number()).default([]),
+});
+
+type ProfileSetupFormValues = z.infer<typeof profileSetupSchema>;
+
 export function ProfileSetupForm({
   tags,
   initialInterested,
@@ -29,89 +52,143 @@ export function ProfileSetupForm({
   onSubmit,
 }: ProfileSetupFormProps) {
   const router = useRouter();
-  const [location, setLocation] = useState(initialLocation);
-  const [interestedIds, setInterestedIds] = useState<number[]>(initialInterested);
-  const [offerIds, setOfferIds] = useState<number[]>(initialOffers);
-  const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const tagOptions = useMemo(
+    () => tags.map((tag) => ({ value: tag.id, label: tag.name })),
+    [tags]
+  );
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const form = useForm<ProfileSetupFormValues>({
+    resolver: zodResolver(profileSetupSchema),
+    defaultValues: {
+      location: initialLocation,
+      interestedIds: initialInterested,
+      offerIds: initialOffers,
+    },
+  });
 
-    if (!location.trim() && interestedIds.length === 0 && offerIds.length === 0) {
-      setError("Add a location or select at least one tag to continue.");
+  const handleSubmit = form.handleSubmit(async (values) => {
+    if (
+      !values.location &&
+      values.interestedIds.length === 0 &&
+      values.offerIds.length === 0
+    ) {
+      form.setError("root", {
+        type: "manual",
+        message: "Add a location or select at least one tag to continue.",
+      });
       return;
     }
 
-    try {
-      setIsSaving(true);
-      setError(null);
+    form.clearErrors("root");
 
+    try {
       const result = await onSubmit({
-        location: location.trim(),
-        interestedTagIds: interestedIds,
-        offerTagIds: offerIds,
+        location: values.location,
+        interestedTagIds: values.interestedIds,
+        offerTagIds: values.offerIds,
       });
 
       if (!result.success) {
-        setError(result.error ?? "Failed to save your profile. Please try again.");
+        form.setError("root", {
+          type: "server",
+          message:
+            result.error ?? "Failed to save your profile. Please try again.",
+        });
         return;
       }
 
       router.push("/browse");
     } catch (submissionError) {
-      setError(
-        submissionError instanceof Error
-          ? submissionError.message
-          : "Something went wrong while saving your profile."
-      );
-    } finally {
-      setIsSaving(false);
+      form.setError("root", {
+        type: "server",
+        message:
+          submissionError instanceof Error
+            ? submissionError.message
+            : "Something went wrong while saving your profile.",
+      });
     }
-  };
+  });
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-8">
-      <section>
-        <label className="block text-sm font-medium text-secondary-content mb-2">
-          Your Location
-        </label>
-        <Input
-          value={location}
-          onChange={(event) => setLocation(event.target.value)}
-          placeholder="Leeds City Centre, West Yorkshire"
-          aria-label="Your location"
+    <Form {...form}>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-8">
+        <FormField
+          control={form.control}
+          name="location"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Your location</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  placeholder="Leeds City Centre, West Yorkshire"
+                  aria-label="Your location"
+                />
+              </FormControl>
+              <FormDescription>
+                We&apos;ll use this to surface nearby matches first.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-        <p className="mt-2 text-xs text-muted-content">
-          We&apos;ll use this to surface nearby matches first.
-        </p>
-      </section>
 
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-primary-content">I&apos;m interested in</h2>
-        <MultiSelect
-          options={tags.map((tag) => ({ value: tag.id, label: tag.name }))}
-          value={interestedIds.map((id) => id.toString())}
-          onChange={(value) => setInterestedIds(value.map((id) => parseInt(id)))}
-          placeholder="Select the skills or items you&apos;re seeking"
+        <FormField
+          control={form.control}
+          name="interestedIds"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>I&apos;m interested in</FormLabel>
+              <FormControl>
+                <MultiSelect
+                  options={tagOptions}
+                  value={field.value ?? []}
+                  onChange={field.onChange}
+                  placeholder="Select the skills or items you&apos;re seeking"
+                  emptyMessage="No tags match your search"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </section>
 
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-primary-content">I can offer</h2>
-        <MultiSelect
-          options={tags.map((tag) => ({ value: tag.id, label: tag.name }))}
-          value={offerIds.map((id) => id.toString())}
-          onChange={(value) => setOfferIds(value.map((id) => parseInt(id))) }
-          placeholder="Choose what you can provide"
+        <FormField
+          control={form.control}
+          name="offerIds"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>I can offer</FormLabel>
+              <FormControl>
+                <MultiSelect
+                  options={tagOptions}
+                  value={field.value ?? []}
+                  onChange={field.onChange}
+                  placeholder="Choose what you can provide"
+                  emptyMessage="No tags match your search"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </section>
 
-      {error && <p className="text-sm text-destructive">{error}</p>}
+        {form.formState.errors.root?.message && (
+          <p className="text-sm text-destructive">
+            {form.formState.errors.root.message}
+          </p>
+        )}
 
-      <Button type="submit" className="w-full py-6 body-large" disabled={isSaving}>
-        {isSaving ? "Saving preferences…" : "Complete profile"}
-      </Button>
-    </form>
+        <Button
+          type="submit"
+          className="w-full py-6 body-large"
+          disabled={form.formState.isSubmitting}
+        >
+          {form.formState.isSubmitting
+            ? "Saving preferences…"
+            : "Complete profile"}
+        </Button>
+      </form>
+    </Form>
   );
 }
