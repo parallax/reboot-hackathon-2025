@@ -213,3 +213,6 @@ export async function getItemById(itemId: number) {
     };
   }
 }
+
+// Alias for createListing to match the UI naming
+export const createItem = createListing;

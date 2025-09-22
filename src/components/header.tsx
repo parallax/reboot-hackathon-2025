@@ -39,7 +39,7 @@ export function Header() {
 
             {/* Navigation icons */}
             <div className="flex items-center">
-              <Link href="/create-listing">
+              <Link href="/create-item">
                 <Button
                   variant="default"
                   size="sm"
@@ -50,7 +50,7 @@ export function Header() {
                 </Button>
               </Link>
 
-              <Link href="/create-listing" className="sm:hidden">
+              <Link href="/create-item" className="sm:hidden">
                 <Button
                   variant="ghost"
                   size="icon"

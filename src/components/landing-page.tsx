@@ -29,7 +29,7 @@ export function LandingPage() {
             </Button>
           </Link>
 
-          <Link href="/create-listing" passHref>
+          <Link href="/create-item" passHref>
             <Button className="w-full py-6 body-large" variant="outline">
               I have something to offer
             </Button>
