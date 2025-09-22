@@ -29,7 +29,8 @@ export function DebugMenu() {
       if (result.success) {
         setStatus({
           variant: "success",
-          message: "Onboarding status cleared. Next auth page will redirect to setup.",
+          message:
+            "Onboarding status cleared. Next auth page will redirect to setup.",
         });
       } else {
         setStatus({
@@ -53,7 +54,6 @@ export function DebugMenu() {
       <PopoverTrigger asChild>
         <Button variant="ghost" size="sm" className="ml-2 gap-2">
           <Bug className="h-4 w-4" />
-          Debug
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-64 space-y-3">

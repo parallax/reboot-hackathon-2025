@@ -1,10 +1,10 @@
 "use server";
 
-import { db } from '@/db/index';
-import { items, itemTags, tags } from '@/db/schema';
-import { auth } from '@clerk/nextjs/server';
-import { revalidatePath } from 'next/cache';
-import { eq, desc } from 'drizzle-orm';
+import { db } from "@/db/index";
+import { items, itemTags, tags } from "@/db/schema";
+import { auth } from "@clerk/nextjs/server";
+import { revalidatePath } from "next/cache";
+import { eq, desc } from "drizzle-orm";
 
 export async function createListing(formData: {
   title: string;
@@ -20,7 +20,7 @@ export async function createListing(formData: {
     if (!userId) {
       return {
         success: false,
-        error: 'You must be signed in to create a listing'
+        error: "You must be signed in to create a listing",
       };
     }
 
@@ -28,33 +28,36 @@ export async function createListing(formData: {
     if (!formData.title.trim()) {
       return {
         success: false,
-        error: 'Title is required'
+        error: "Title is required",
       };
     }
 
     if (!formData.description.trim()) {
       return {
         success: false,
-        error: 'Description is required'
+        error: "Description is required",
       };
     }
 
     if (!formData.tagId) {
       return {
         success: false,
-        error: 'Category is required'
+        error: "Category is required",
       };
     }
 
     // Create the listing in the database
-    const [newItem] = await db.insert(items).values({
-      userId,
-      title: formData.title.trim(),
-      description: formData.description.trim(),
-      imageUrl: formData.imageUrl || null,
-      repeatable: formData.repeatable,
-      active: true, // New listings are active by default
-    }).returning();
+    const [newItem] = await db
+      .insert(items)
+      .values({
+        userId,
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        imageUrl: formData.imageUrl || null,
+        repeatable: formData.repeatable,
+        active: true, // New listings are active by default
+      })
+      .returning();
 
     // Create the item-tag relationship
     await db.insert(itemTags).values({
@@ -63,8 +66,8 @@ export async function createListing(formData: {
     });
 
     // Revalidate the listings page to show the new listing
-    revalidatePath('/');
-    revalidatePath('/listings');
+    revalidatePath("/");
+    revalidatePath("/listings");
 
     return {
       success: true,
@@ -74,14 +77,13 @@ export async function createListing(formData: {
         description: newItem.description,
         imageUrl: newItem.imageUrl,
         repeatable: newItem.repeatable,
-      }
+      },
     };
-
   } catch (error) {
-    console.error('Error creating listing:', error);
+    console.error("Error creating listing:", error);
     return {
       success: false,
-      error: 'Failed to create listing. Please try again.'
+      error: "Failed to create listing. Please try again.",
     };
   }
 }
@@ -94,7 +96,7 @@ export async function getUserListings(userId?: string) {
     if (!targetUserId) {
       return {
         success: false,
-        error: 'User not found'
+        error: "User not found",
       };
     }
 
@@ -114,14 +116,13 @@ export async function getUserListings(userId?: string) {
 
     return {
       success: true,
-      data: userListings
+      data: userListings,
     };
-
   } catch (error) {
-    console.error('Error fetching user listings:', error);
+    console.error("Error fetching user listings:", error);
     return {
       success: false,
-      error: 'Failed to fetch listings'
+      error: "Failed to fetch listings",
     };
   }
 }
@@ -136,21 +137,24 @@ export async function getActiveListings() {
         imageUrl: items.imageUrl,
         repeatable: items.repeatable,
         userId: items.userId,
+        tagId: itemTags.tagId,
+        tagName: tags.name,
       })
       .from(items)
+      .leftJoin(itemTags, eq(items.id, itemTags.itemId))
+      .leftJoin(tags, eq(itemTags.tagId, tags.id))
       .where(eq(items.active, true))
       .orderBy(desc(items.id));
 
     return {
       success: true,
-      data: activeListings
+      data: activeListings,
     };
-
   } catch (error) {
-    console.error('Error fetching active listings:', error);
+    console.error("Error fetching active listings:", error);
     return {
       success: false,
-      error: 'Failed to fetch listings'
+      error: "Failed to fetch listings",
     };
   }
 }
@@ -178,17 +182,17 @@ export async function getItemById(itemId: number) {
     if (itemWithTags.length === 0) {
       return {
         success: false,
-        error: 'Item not found'
+        error: "Item not found",
       };
     }
 
     // Transform the data to group tags
     const item = itemWithTags[0];
     const itemTags_list = itemWithTags
-      .filter(row => row.tagId !== null)
-      .map(row => ({
+      .filter((row) => row.tagId !== null)
+      .map((row) => ({
         id: row.tagId!,
-        name: row.tagName!
+        name: row.tagName!,
       }));
 
     return {
@@ -201,15 +205,17 @@ export async function getItemById(itemId: number) {
         repeatable: item.repeatable,
         active: item.active,
         userId: item.userId,
-        tags: itemTags_list
-      }
+        tags: itemTags_list,
+      },
     };
-
   } catch (error) {
-    console.error('Error fetching item:', error);
+    console.error("Error fetching item:", error);
     return {
       success: false,
-      error: 'Failed to fetch item'
+      error: "Failed to fetch item",
     };
   }
 }
+
+// Alias for createListing to match the UI naming
+export const createItem = createListing;
