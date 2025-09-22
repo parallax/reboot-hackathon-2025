@@ -186,7 +186,7 @@ export default function CreateListingPage() {
   // Render different stages
   if (stage === "loading") {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-surface p-4">
+      <div className="flex flex-col items-center justify-center bg-surface p-4">
         <div className="flex flex-col items-center">
           <RefreshCcwDot className="h-16 w-16 text-primary animate-spin" />
           <h2 className="text-2xl font-bold font-brand text-primary-content mt-4">
@@ -202,7 +202,7 @@ export default function CreateListingPage() {
 
   if (stage === "complete") {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-surface p-4">
+      <div className="flex flex-col items-center justify-center bg-surface p-4">
         <div className="flex flex-col items-center">
           <div className="relative">
             <RefreshCcwDot className="h-16 w-16 text-primary animate-pulse" />
@@ -231,7 +231,7 @@ export default function CreateListingPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-surface p-4">
+    <div className="flex flex-col bg-surface p-4">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-primary-content mb-2">
           Create Listing
