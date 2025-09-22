@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { RefreshCcwDot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -30,7 +29,7 @@ export default function ProfileSetupPage() {
     if (checked) {
       setInterestedIn([...interestedIn, tagId]);
     } else {
-      setInterestedIn(interestedIn.filter(id => id !== tagId));
+      setInterestedIn(interestedIn.filter((id) => id !== tagId));
     }
   };
 
@@ -38,7 +37,7 @@ export default function ProfileSetupPage() {
     if (checked) {
       setCanOffer([...canOffer, tagId]);
     } else {
-      setCanOffer(canOffer.filter(id => id !== tagId));
+      setCanOffer(canOffer.filter((id) => id !== tagId));
     }
   };
 
@@ -50,14 +49,13 @@ export default function ProfileSetupPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-surface p-4">
-      <div className="flex items-center mb-6">
-        <RefreshCcwDot className="h-8 w-8 text-primary" />
-        <span className="ml-2 text-2xl font-bold font-brand text-primary">swapable</span>
-      </div>
-
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-primary-content mb-2">Profile Setup</h1>
-        <p className="text-muted-content">Tell us what you're interested in and what you can offer</p>
+        <h1 className="text-2xl font-bold text-primary-content mb-2">
+          Profile Setup
+        </h1>
+        <p className="text-muted-content">
+          Tell us what you&apos;re interested in and what you can offer
+        </p>
       </div>
 
       {/* Location Input */}
@@ -76,14 +74,21 @@ export default function ProfileSetupPage() {
 
       {/* Interested In Section */}
       <div className="mb-8">
-        <h2 className="text-lg font-semibold text-primary-content mb-4">I'm interested in</h2>
+        <h2 className="text-lg font-semibold text-primary-content mb-4">
+          I&apos;m interested in
+        </h2>
         <div className="space-y-3">
           {mockTags.map((tag) => (
-            <div key={`interested-${tag.id}`} className="flex items-center space-x-3">
+            <div
+              key={`interested-${tag.id}`}
+              className="flex items-center space-x-3"
+            >
               <Checkbox
                 id={`interested-${tag.id}`}
                 checked={interestedIn.includes(tag.id)}
-                onCheckedChange={(checked) => handleInterestedInChange(tag.id, !!checked)}
+                onCheckedChange={(checked) =>
+                  handleInterestedInChange(tag.id, !!checked)
+                }
               />
               <label
                 htmlFor={`interested-${tag.id}`}
@@ -98,14 +103,21 @@ export default function ProfileSetupPage() {
 
       {/* Can Offer Section */}
       <div className="mb-8">
-        <h2 className="text-lg font-semibold text-primary-content mb-4">I can offer</h2>
+        <h2 className="text-lg font-semibold text-primary-content mb-4">
+          I can offer
+        </h2>
         <div className="space-y-3">
           {mockTags.map((tag) => (
-            <div key={`offer-${tag.id}`} className="flex items-center space-x-3">
+            <div
+              key={`offer-${tag.id}`}
+              className="flex items-center space-x-3"
+            >
               <Checkbox
                 id={`offer-${tag.id}`}
                 checked={canOffer.includes(tag.id)}
-                onCheckedChange={(checked) => handleCanOfferChange(tag.id, !!checked)}
+                onCheckedChange={(checked) =>
+                  handleCanOfferChange(tag.id, !!checked)
+                }
               />
               <label
                 htmlFor={`offer-${tag.id}`}

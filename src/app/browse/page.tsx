@@ -17,6 +17,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import Link from "next/link";
 
 // Mock data for listings
 const mockListings = [
@@ -65,28 +66,6 @@ const mockListings = [
   },
 ];
 
-// Mock recommended offers based on user preferences
-const mockRecommendedOffers = [
-  {
-    id: 1,
-    title: "Web Design Services",
-    description:
-      "Professional web design and development services for small businesses",
-    category: "design",
-    userId: "user1",
-    imageUrl: "/replace-this.jpg",
-  },
-  {
-    id: 4,
-    title: "Software Development",
-    description:
-      "Full-stack development services for web and mobile applications",
-    category: "development",
-    userId: "user4",
-    imageUrl: "/replace-this.jpg",
-  },
-];
-
 // Mock categories
 const categories = [
   { value: "all", label: "All Categories" },
@@ -123,52 +102,6 @@ export default function BrowseListingsPage() {
         </p>
       </div>
 
-      {/* Recommended Offers Section */}
-      <div className="mb-8">
-        <h2 className="text-xl font-bold text-primary-content mb-4">
-          Recommended Offers
-        </h2>
-        {mockRecommendedOffers.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {mockRecommendedOffers.map((offer) => (
-              <Card
-                key={offer.id}
-                className="bg-surface-secondary border-input"
-              >
-                <div className="relative h-48 w-full">
-                  <Image
-                    src={offer.imageUrl}
-                    alt={offer.title}
-                    fill
-                    className="object-cover rounded-t-lg"
-                  />
-                </div>
-                <CardHeader>
-                  <CardTitle className="text-primary-content">
-                    {offer.title}
-                  </CardTitle>
-                  <CardDescription className="text-secondary-content">
-                    {offer.description}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center">
-                    <span className="bg-primary text-primary-foreground text-xs px-2 py-1 rounded">
-                      {offer.category.charAt(0).toUpperCase() +
-                        offer.category.slice(1)}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <p className="text-muted-content">
-            No recommended offers at this time
-          </p>
-        )}
-      </div>
-
       {/* Category Filter Dropdown */}
       <div className="mb-6">
         <label className="block text-sm font-medium text-secondary-content mb-2">
@@ -191,7 +124,10 @@ export default function BrowseListingsPage() {
       {/* Listings */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredListings.map((listing) => (
-          <Card key={listing.id} className="bg-surface-secondary border-input">
+          <Card
+            key={listing.id}
+            className="bg-surface-secondary border-input relative"
+          >
             <div className="relative h-48 w-full">
               <Image
                 src={listing.imageUrl}
@@ -202,7 +138,12 @@ export default function BrowseListingsPage() {
             </div>
             <CardHeader>
               <CardTitle className="text-primary-content">
-                {listing.title}
+                <Link
+                  href={`/listing/${listing.id}`}
+                  className="hover:text-primary transition-colors after:absolute after:inset-0 after:content-[''] after:z-10"
+                >
+                  {listing.title}
+                </Link>
               </CardTitle>
               <CardDescription className="text-secondary-content">
                 {listing.description}

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { RefreshCcwDot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -88,11 +87,6 @@ export default function OfferHistoryPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-surface p-4">
-      <div className="flex items-center mb-6">
-        <RefreshCcwDot className="h-8 w-8 text-primary" />
-        <span className="ml-2 text-2xl font-bold font-brand text-primary">swapable</span>
-      </div>
-
       <div className="mb-6">
         <Button variant="outline" className="mb-4" onClick={() => window.history.back()}>
           ← Back to listings

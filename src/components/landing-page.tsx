@@ -3,6 +3,7 @@
 import { RefreshCcwDot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { LinkButton } from "@/components/ui/linkButton";
 
 export function LandingPage() {
   return (
@@ -11,7 +12,9 @@ export function LandingPage() {
         {/* Logo */}
         <div className="flex items-center justify-center">
           <RefreshCcwDot className="h-16 w-16 text-primary" />
-          <span className="ml-3 text-4xl font-bold font-brand text-primary">swapable</span>
+          <span className="ml-3 text-4xl font-bold font-brand text-primary">
+            swapable
+          </span>
         </div>
 
         {/* Tagline */}
@@ -21,17 +24,13 @@ export function LandingPage() {
 
         {/* Buttons */}
         <div className="flex flex-col space-y-4 w-full">
-          <Link href="/browse" passHref>
-            <Button className="w-full py-6 body-large" variant="default">
-              I need
-            </Button>
-          </Link>
+          <LinkButton href="/browse" variant="default" size="lg">
+            I need
+          </LinkButton>
 
-          <Link href="/create-listing" passHref>
-            <Button className="w-full py-6 body-large" variant="outline">
-              I have
-            </Button>
-          </Link>
+          <LinkButton href="/browse" variant="outline" size="lg">
+            I want
+          </LinkButton>
         </div>
       </div>
     </div>
