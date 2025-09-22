@@ -2,7 +2,10 @@
 
 import { db } from "@/db";
 import { offers, offerHistory } from "@/db/schema";
+import { auth } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
+import { redirect } from "next/navigation";
+import { sendOfferEmail } from "./send-offer-email";
 
 interface CreateOfferParams {
   itemId: number;
@@ -11,58 +14,56 @@ interface CreateOfferParams {
   expiryDays?: number; // Default to 7 days if not provided
 }
 
-export async function createOffer({ 
-  itemId, 
-  offeredItemId, 
-  expiryDays = 7 
+export async function createOffer({
+  itemId,
+  offeredItemId,
 }: CreateOfferParams) {
-  try {
-    // Create the offer record
-    const [newOffer] = await db
-      .insert(offers)
-      .values({
-        createdAt: new Date(),
-      })
-      .returning();
+  const { userId } = await auth();
 
-    if (!newOffer) {
-      throw new Error("Failed to create offer");
-    }
-
-    // Calculate expiry date
-    const expiryDate = new Date();
-    expiryDate.setDate(expiryDate.getDate() + expiryDays);
-
-    // Create the offer history record
-    const [newOfferHistory] = await db
-      .insert(offerHistory)
-      .values({
-        itemId,
-        offeredItemId,
-        expiry: expiryDate,
-        createdAt: new Date(),
-      })
-      .returning();
-
-    if (!newOfferHistory) {
-      throw new Error("Failed to create offer history");
-    }
-
-    return {
-      success: true,
-      data: {
-        offerId: newOffer.id,
-        offerHistoryId: newOfferHistory.id,
-        expiry: expiryDate,
-      }
-    };
-  } catch (error) {
-    console.error("Error creating offer:", error);
-    return {
-      success: false,
-      error: "Failed to create offer",
-    };
+  if (!userId) {
+    throw new Error("User not authenticated");
   }
+
+  // Create the offer record
+  const [newOffer] = await db
+    .insert(offers)
+    .values({
+      createdAt: new Date(),
+    })
+    .returning();
+
+  if (!newOffer) {
+    throw new Error("Failed to create offer");
+  }
+
+  // Calculate expiry date
+  const expiryDate = new Date();
+  expiryDate.setDate(expiryDate.getDate() + 7);
+
+  // Create the offer history record
+  const [newOfferHistory] = await db
+    .insert(offerHistory)
+    .values({
+      itemId,
+      offeredItemId,
+      expiry: expiryDate,
+      createdAt: new Date(),
+    })
+    .returning();
+
+  if (!newOfferHistory) {
+    throw new Error("Failed to create offer history");
+  }
+
+  // Then send email notification to the item owner
+  await sendOfferEmail({
+    itemId: itemId,
+    offeredItemId: offeredItemId,
+    offerId: newOffer.id,
+    offererUserId: userId,
+  });
+
+  redirect(`/offers`);
 }
 
 export async function getOfferById(offerId: number) {

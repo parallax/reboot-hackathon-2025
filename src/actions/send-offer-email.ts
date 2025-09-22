@@ -86,7 +86,7 @@ export async function sendOfferEmail({ itemId, offeredItemId, offerId }: SendOff
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${process.env.NEXT_PUBLIC_APP_URL}/offer/${offerId}" 
+              <a href="${process.env.NEXT_PUBLIC_APP_URL}/offers/${offerId}" 
                  style="background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 500;">
                 View & Respond to Offer
               </a>

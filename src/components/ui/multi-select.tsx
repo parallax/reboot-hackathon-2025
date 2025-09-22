@@ -349,10 +349,10 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
     const [isAnimating, setIsAnimating] = React.useState(false);
     const [searchValue, setSearchValue] = React.useState("");
 
-    console.log('MultiSelect - isControlled:', isControlled);
-    console.log('MultiSelect - value:', value);
-    console.log('MultiSelect - defaultValue:', defaultValue);
-    console.log('MultiSelect - selectedValues after init:', selectedValues);
+    console.log("MultiSelect - isControlled:", isControlled);
+    console.log("MultiSelect - value:", value);
+    console.log("MultiSelect - defaultValue:", defaultValue);
+    console.log("MultiSelect - selectedValues after init:", selectedValues);
 
     const [politeMessage, setPoliteMessage] = React.useState("");
     const [assertiveMessage, setAssertiveMessage] = React.useState("");
@@ -401,7 +401,10 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
 
     const resetToDefault = React.useCallback(() => {
       const resetValue = isControlled ? value : defaultValue;
-      console.log('MultiSelect - resetToDefault called, setting selectedValues to:', resetValue);
+      console.log(
+        "MultiSelect - resetToDefault called, setting selectedValues to:",
+        resetValue
+      );
       setSelectedValues(resetValue);
       setIsPopoverOpen(false);
       setSearchValue("");
@@ -443,7 +446,7 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
           }
         },
       }),
-      [resetToDefault, selectedValues, onValueChange]
+      [resetToDefault, selectedValues, onValueChange, isControlled]
     );
 
     const [screenSize, setScreenSize] = React.useState<
@@ -628,7 +631,11 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
     ) => {
       if (event.key === "Enter") {
         setIsPopoverOpen(true);
-      } else if (event.key === "Backspace" && !event.currentTarget.value && !isControlled) {
+      } else if (
+        event.key === "Backspace" &&
+        !event.currentTarget.value &&
+        !isControlled
+      ) {
         const newSelectedValues = [...selectedValues];
         newSelectedValues.pop();
         setSelectedValues(newSelectedValues);
@@ -689,29 +696,39 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
 
     React.useEffect(() => {
       if (isControlled) {
-        console.log('MultiSelect - controlled mode, syncing selectedValues with value:', value);
+        console.log(
+          "MultiSelect - controlled mode, syncing selectedValues with value:",
+          value
+        );
         setSelectedValues(value);
       } else if (!resetOnDefaultValueChange) {
         return;
       }
       const prevDefaultValue = prevDefaultValueRef.current;
-      console.log('MultiSelect - useEffect check:', {
+      console.log("MultiSelect - useEffect check:", {
         isControlled,
         prevDefaultValue,
         defaultValue,
         value,
         selectedValues,
         arraysEqualPrev: arraysEqual(prevDefaultValue, defaultValue),
-        arraysEqualCurrent: arraysEqual(selectedValues, defaultValue)
+        arraysEqualCurrent: arraysEqual(selectedValues, defaultValue),
       });
       if (!isControlled && !arraysEqual(prevDefaultValue, defaultValue)) {
         if (!arraysEqual(selectedValues, defaultValue)) {
-          console.log('MultiSelect - resetting selectedValues to defaultValue');
+          console.log("MultiSelect - resetting selectedValues to defaultValue");
           setSelectedValues(defaultValue);
         }
         prevDefaultValueRef.current = [...defaultValue];
       }
-    }, [isControlled, defaultValue, value, selectedValues, arraysEqual, resetOnDefaultValueChange]);
+    }, [
+      isControlled,
+      defaultValue,
+      value,
+      selectedValues,
+      arraysEqual,
+      resetOnDefaultValueChange,
+    ]);
 
     const getWidthConstraints = () => {
       const defaultMinWidth = screenSize === "mobile" ? "0px" : "200px";

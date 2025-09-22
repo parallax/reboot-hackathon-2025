@@ -18,7 +18,7 @@ export default async function Page(props: PageProps<"/browse">) {
     selectedCategories = await getUserPreferredCategories();
   }
 
-  console.log('Browse page - selectedCategories:', selectedCategories);
+  console.log("Browse page - selectedCategories:", selectedCategories);
 
   // Fetch data
   const [listingsResult, tags] = await Promise.all([

@@ -32,8 +32,8 @@ export function BrowseItems({
   }));
 
   // Debug logging
-  console.log('BrowseItems - selectedCategories:', selectedCategories);
-  console.log('BrowseItems - categories:', categories);
+  console.log("BrowseItems - selectedCategories:", selectedCategories);
+  console.log("BrowseItems - categories:", categories);
 
   const handleCategoriesChange = (values: string[]) => {
     // Update the URL with the selected categories
