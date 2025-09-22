@@ -32,8 +32,8 @@ export function BrowseItems({
   }));
 
   // Debug logging
-  console.log('BrowseItems - selectedCategories:', selectedCategories);
-  console.log('BrowseItems - categories:', categories);
+  console.log("BrowseItems - selectedCategories:", selectedCategories);
+  console.log("BrowseItems - categories:", categories);
 
   const handleCategoriesChange = (values: string[]) => {
     // Update the URL with the selected categories
@@ -50,12 +50,9 @@ export function BrowseItems({
   return (
     <div className="flex flex-col bg-surface p-4">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-primary-content mb-2">
+        <h1 className="text-2xl font-bold text-primary-content">
           Browse Listings
         </h1>
-        <p className="text-muted-content">
-          Find what you need from local businesses
-        </p>
       </div>
 
       <div className="mb-6">
