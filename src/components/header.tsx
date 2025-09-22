@@ -80,36 +80,40 @@ export function Header({ debugEnabled = false }: HeaderProps) {
             {/* Navigation icons */}
             <div className="flex items-center">
               {/* Desktop Offers Link */}
-              <Link href="/offers" className="hidden md:block">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="mr-2 text-primary-content hover:bg-surface-secondary"
-                >
-                  Offers
-                </Button>
-              </Link>
+              <SignedIn>
+                <Link href="/offers" className="hidden md:block">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mr-2 text-primary-content hover:bg-surface-secondary"
+                  >
+                    Offers
+                  </Button>
+                </Link>
+              </SignedIn>
 
-              <Link href="/create-item">
-                <Button
-                  variant="default"
-                  size="sm"
-                  className="mr-2 bg-primary hover:bg-emerald-700 text-white hidden sm:flex items-center gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  Create Listing
-                </Button>
-              </Link>
+              <SignedIn>
+                <Link href="/create-item">
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="mr-2 bg-primary hover:bg-emerald-700 text-white hidden sm:flex items-center gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Create Listing
+                  </Button>
+                </Link>
 
-              <Link href="/create-item" className="sm:hidden">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="mr-2 border border-emerald-600 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </Link>
+                <Link href="/create-item" className="sm:hidden">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="mr-2 border border-emerald-600 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </SignedIn>
 
               {/* Auth: Clerk user menu */}
               <div className="ml-2 flex items-center">
@@ -139,14 +143,16 @@ export function Header({ debugEnabled = false }: HeaderProps) {
         {isMobileMenuOpen && (
           <div className="md:hidden border-t border-border bg-surface-secondary">
             <div className="px-4 py-4 space-y-3">
-              <Link
-                href="/offers"
-                className="flex items-center gap-3 px-3 py-2 text-primary-content hover:bg-surface rounded-md transition-colors"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                <RefreshCcwDotIcon className="h-4 w-4" />
-                My Offers
-              </Link>
+              <SignedIn>
+                <Link
+                  href="/offers"
+                  className="flex items-center gap-3 px-3 py-2 text-primary-content hover:bg-surface rounded-md transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <RefreshCcwDotIcon className="h-4 w-4" />
+                  My Offers
+                </Link>
+              </SignedIn>
               <Link
                 href="/browse"
                 className="flex items-center gap-3 px-3 py-2 text-primary-content hover:bg-surface rounded-md transition-colors"
@@ -155,14 +161,16 @@ export function Header({ debugEnabled = false }: HeaderProps) {
                 <Search className="h-4 w-4" />
                 Browse Listings
               </Link>
-              <Link
-                href="/create-item"
-                className="flex items-center gap-3 px-3 py-2 text-primary-content hover:bg-surface rounded-md transition-colors"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                <Plus className="h-4 w-4" />
-                Create Listing
-              </Link>
+              <SignedIn>
+                <Link
+                  href="/create-item"
+                  className="flex items-center gap-3 px-3 py-2 text-primary-content hover:bg-surface rounded-md transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Plus className="h-4 w-4" />
+                  Create Listing
+                </Link>
+              </SignedIn>
             </div>
           </div>
         )}

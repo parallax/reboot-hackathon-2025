@@ -285,7 +285,7 @@ export default function ItemPage() {
       {item.active && isCreator && (
         <Card className="bg-surface-secondary border-input mb-8">
           <CardHeader>
-            <CardTitle className="text-primary-content flex items-center gap-2">
+            <CardTitle className="text-primary-content flex items-center gap-2 pt-6">
               <Edit className="h-5 w-5 text-primary" />
               Manage Your Item
             </CardTitle>
@@ -368,7 +368,7 @@ export default function ItemPage() {
       {item.active && !isCreator && (
         <Card className="bg-surface-secondary border-input">
           <CardHeader>
-            <CardTitle className="text-primary-content flex items-center gap-2">
+            <CardTitle className="text-primary-content flex items-center gap-2 pt-6">
               <RefreshCcwDot className="h-5 w-5 text-primary" />
               Make an Offer
             </CardTitle>
