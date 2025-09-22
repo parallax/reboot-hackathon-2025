@@ -5,13 +5,26 @@ import Link from "next/link";
 import { DebugMenu } from "@/components/debug-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
+import {
+  SignedIn,
+  SignedOut,
+  SignInButton,
+  useUser,
+  useClerk,
+} from "@clerk/nextjs";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
 
 type HeaderProps = {
   debugEnabled?: boolean;
 };
 
 export function Header({ debugEnabled = false }: HeaderProps) {
+  const { user } = useUser();
+  const clerk = useClerk();
   return (
     <header className="sticky top-0 z-50 bg-surface border-b border-border backdrop-blur-sm bg-surface/95">
       <div className="container mx-auto px-4">
@@ -68,19 +81,56 @@ export function Header({ debugEnabled = false }: HeaderProps) {
                 </Button>
               </Link>
 
-              {/* Auth: Clerk user menu */}
+              {/* Auth: custom user menu */}
               <div className="ml-2">
                 <SignedIn>
-                  <UserButton userProfileUrl="/profile-setup" appearance={{ elements: { userButtonAvatarBox: "h-8 w-8" } }}>
-                    <UserButton.MenuItems>
-                      <UserButton.Link label="Profile settings" href="/profile-setup" />
-                      <UserButton.Action label="Sign out" action="signOut" />
-                    </UserButton.MenuItems>
-                  </UserButton>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button
+                        aria-label="Open user menu"
+                        className="h-8 w-8 rounded-full overflow-hidden border border-border focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          alt={user?.fullName ?? "User avatar"}
+                          src={user?.imageUrl ?? "/vercel.svg"}
+                          className="h-full w-full object-cover"
+                        />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent align="end" className="w-56 p-1">
+                      <div className="px-2 py-1.5 text-xs text-secondary-content">
+                        {user?.fullName ??
+                          user?.primaryEmailAddress?.emailAddress}
+                      </div>
+                      <Link
+                        href="/user-preferences"
+                        className="block w-full rounded-md px-3 py-2 text-sm hover:bg-surface-secondary"
+                      >
+                        Manage preferences
+                      </Link>
+                      <button
+                        type="button"
+                        className="block w-full rounded-md px-3 py-2 text-left text-sm hover:bg-surface-secondary"
+                        onClick={() => clerk.openUserProfile()}
+                      >
+                        Account & security
+                      </button>
+                      <button
+                        type="button"
+                        className="block w-full rounded-md px-3 py-2 text-left text-sm text-destructive hover:bg-surface-secondary"
+                        onClick={() => clerk.signOut()}
+                      >
+                        Sign out
+                      </button>
+                    </PopoverContent>
+                  </Popover>
                 </SignedIn>
                 <SignedOut>
                   <SignInButton mode="redirect">
-                    <Button variant="outline" size="sm" className="ml-1">Sign in</Button>
+                    <Button variant="outline" size="sm" className="ml-1">
+                      Sign in
+                    </Button>
                   </SignInButton>
                 </SignedOut>
               </div>
